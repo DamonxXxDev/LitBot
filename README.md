@@ -1,5 +1,5 @@
 # LitBot
-A fork of [OhGodMusicBot](https://github.com/bdistin/OhGodMusicBot)
+A fork of [OhGodMusicBot](https://github.com/bdistin/OhGodMusicBot) with custom commands, and other features.
 
 ## Installation (Windows)
 

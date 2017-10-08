@@ -141,6 +141,8 @@ const commands = {
 };
 client.on('ready', () => {
 	console.log('ready!');
+	fs.stat('./savedfiles/', (err,stat) => {
+		if(err == null) {
 	fs.stat('./savedfiles/roleids.json', (err, stat) => {
 		if(err == null) {
 			fs.readFile("./savedfiles/roleids.json", (err, data) => {
@@ -156,6 +158,12 @@ client.on('ready', () => {
 				console.log('Error reading roleids file: ', err.code);
 	}
 });
+} else if (err.code == 'ENOENT') {
+	// file does not exist
+	fs.mkdirSync('./savedfiles/');
+} else {
+	console.log('Error checking if ./savedfiles/ exists: ', err.code);
+}});
 });
 
 client.on('guildCreate',function(guild){
