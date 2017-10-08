@@ -1,5 +1,5 @@
-# OhGodMusicBot
-A v10 Discord.JS music bot in 100 lines or less
+# LitBot
+A fork of [OhGodMusicBot](https://github.com/bdistin/OhGodMusicBot)
 
 ## Installation (Windows)
 
@@ -29,7 +29,7 @@ Download FFMPEG from [this website](https://ffmpeg.zeranoe.com/builds/). Make su
 
 ### Install & Configure FFMPEG
 
-Extract the files to the root of your harddrive, and rename the folder to `ffmpeg`. 
+Extract the files to the root of your harddrive, and rename the folder to `ffmpeg`.
 
 **Then add FFMPEG to your Path variable:**
 
@@ -38,7 +38,7 @@ Extract the files to the root of your harddrive, and rename the folder to `ffmpe
 3. on the left Advanced system settings
 4. Environment Variables
 5. under System variables find the variable **Path** hit edit
-  * Depending on your version of windows you may have a list of entries or a semicolon sperated field of entries. 
+  * Depending on your version of windows you may have a list of entries or a semicolon sperated field of entries.
 
 **If Windows 10:**
 
