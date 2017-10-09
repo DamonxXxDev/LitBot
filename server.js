@@ -107,15 +107,30 @@ const commands = {
 		for(var i = 0; i < roleids.length; i++) {
 		if(roleids[i].guildid == msg.guild.id) {
 		if (msg.member.roles.has(roleids[i].roleid)) {
-		let args = msg.content.toLowerCase().split(' ');
+		let args = msg.content.toLowerCase().split('"');
 		var command = args[1];
-		var response = args[2];
+		var response = args[3];
+		msg.channel.send('Are you sure you want to add this command: **' + command + '** with response: **' + response + '**. Reply yes/no.');
+		let collector = msg.channel.createCollector(m => m);
+		collector.on('collect', m => {
+		console.log(m.content + ' ' + m.author.id + ' ' + msg.author.id);
+		if (m.content == 'yes' && m.author.id == msg.author.id) {
+		console.log('Added command: **' + command + '** with response: **' + response + '** by: **' + msg.author.username + '#' + msg.author.discriminator + '** in guild: ' + msg.guild.name);
 		customcmds[msg.guild.id].cmds.push({command: command, response: response, creator: msg.author.username + '#' + msg.author.discriminator});
-		msg.channel.send('Added command: **' + args[1] + '** with response: **' + args[2] + '** by: **' + msg.author.username + '#' + msg.author.discriminator + '**');
+		msg.channel.send('Added command: **' + args[1] + '** with response: **' + args[3] + '** by: **' + msg.author.username + '#' + msg.author.discriminator + '**');
 		fs.writeFile( "./savedfiles/cmds_" + msg.guild.id + '.json', JSON.stringify( customcmds[msg.guild.id].cmds ), "utf8", (err) => {
 		if (err) console.log('Error saving command to file: ' + err);
 	});
-}}}},
+	collector.stop();
+} else if (m.content == 'no' && m.author.id == msg.author.id) {
+	msg.channel.send('Canceled creating command.');
+	collector.stop();
+}
+});
+} else {
+msg.channel.send("Couldn't add command, because you are not in the Bot Controller role.");
+}
+}}},
 	'customcommands': (msg) => {
 		if (customcmds[msg.guild.id].cmds.length == 0) return msg.channel.send(`Add some custom commands first with ${tokens.prefix}addcommand`);
 		let tosend = [];
@@ -137,6 +152,8 @@ const commands = {
       break;
     }
 	}
+} else {
+msg.channel.send("Couldn't add command, because you're not in the Bot Controller role.");
 }}}}
 };
 client.on('ready', () => {
@@ -227,7 +244,7 @@ client.on('message', msg => {
 message();
 }
 function message(){
-	let obj = customcmds[msg.guild.id].cmds.find(o => o.command === msg.content.toLowerCase()/*.split(' ')[0]*/);
+	let obj = customcmds[msg.guild.id].cmds.find(o => o.command === msg.content.toLowerCase());
 	if (obj) msg.channel.send(obj.response);
 	if (!msg.content.startsWith(tokens.prefix)) return;
 	if (commands.hasOwnProperty(msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0])) commands[msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0]](msg);
