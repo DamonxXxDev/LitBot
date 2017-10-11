@@ -1,6 +1,6 @@
 {
     "d_token" : "YOUR DISCORD APP TOKEN",
-	"yt_api_key" : "AIzaSyAGIpmukGZxGasWNV3I5-C0gCu7CBdFk_Y",
+	"yt_api_key" : "your youtube token here",
     "prefix" : "++",
 	"passes" : 3 //can be increased to reduce packetloss at the expense of upload bandwidth, 4-5 should be lossless at the expense of 4-5x upload
 }
