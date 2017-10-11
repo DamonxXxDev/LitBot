@@ -1,8 +1,14 @@
 const { Client } = require('discord.js');
-const yt = require('ytdl-core');
-const lodash = require('lodash');
+var yt = require('ytdl-core');
+var lodash = require('lodash');
+var urlchk = require('valid-url');
 const tokens = require('./tokens.json');
 const client = new Client();
+var search = require('youtube-search');
+var opts = {
+  maxResults: 5,
+  key: tokens.yt_api_key
+};
 let queue = {};
 let customcmds = {};
 let roleids = [];
@@ -14,7 +20,8 @@ const commands = {
 		if (!msg.guild.voiceConnection) return commands.join(msg).then(() => commands.play(msg));
 		if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].songs = [];
 		let url = msg.content.split(' ')[1];
-		if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, or id after ${tokens.prefix}play`);
+		if(urlchk.isWebUri(url)){
+		if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}play`);
 		yt.getInfo(url, (err, info) => {
 			if(err) return msg.channel.send('Invalid YouTube Link: ' + err);
 			queue[msg.guild.id].songs.push({url: url, title: info.title, requester: msg.author.username});
@@ -26,16 +33,68 @@ const commands = {
 			play(queue[msg.guild.id].songs.shift());
 			}
 		});
+	}else{
+  function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+  }
+  var parts = msg.content.split(' ');
+  parts.shift();
+	var searchTerms = parts.join(' ');
+	search(searchTerms, opts, function(err,results){
+	if(err) return console.log('Error searching youtube: ' + err);
+	//console.dir(results);
+  var tosend = ['**Select a song with the `' + tokens.prefix + 'select n` command, or cancel using the `' + tokens.prefix + 'cancel` command: **'];
+  for (i = 0; i < results.length; i++) {
+    var lineNumber = i + 1;
+    tosend.push(lineNumber + ': ' + results[i].title);
+  }
+  msg.channel.send(tosend.join("\n"));
+  let collector = msg.channel.createCollector(m => m);
+  var timeout = setTimeout(function() {msg.channel.send('Canceled playing song.'); collector.stop(); }, 20000);
+  collector.on('collect', m => {
+    if(!m.author.id == msg.author.id) return;
+    if(m.content.startsWith(tokens.prefix + 'select ')) {
+    var parts = m.content.split(' ');
+    parts.shift();
+  	var number = parts.join(' ');
+    if(!isNumeric(number)) return;
+    if(!number < 6 && !number > 0) return;
+    var number = number - 1;
+    var url = results[number].link;
+    yt.getInfo(url, (err, info) => {
+			if(err) { msg.channel.send('Error playing song, try again later.'); collector.stop(); clearTimeout(timeout); return; }
+			queue[msg.guild.id].songs.push({url: url, title: info.title, requester: msg.author.username});
+			if (queue[msg.guild.id].playing == true) {
+			msg.channel.send(`added **${info.title}** to the queue`);
+      collector.stop();
+      clearTimeout(timeout);
+			} else {
+			let dispatcher;
+			queue[msg.guild.id].playing = true;
+			play(queue[msg.guild.id].songs.shift());
+      collector.stop();
+      clearTimeout(timeout);
+			}
+		});
+  } else {
+    if(!m.content.startsWith(tokens.prefix + 'cancel')) return;
+    collector.stop();
+    m.channel.send('Canceled playing song.')
+    clearTimeout(timeout);
+  }
+  });
+	});
+	}
 
 
 		//console.log(queue);
 		function play(song) {
-			if (song === undefined) return msg.channel.send('Queue is empty').then(() => {
+			if (song === undefined) return msg.channel.send('Queue is empty. Leaving from voice channel.').then(() => {
 				queue[msg.guild.id].playing = false;
 				msg.member.voiceChannel.leave();
 			});
 			msg.channel.send(`Playing: **${song.title}** as requested by: **${song.requester}**`);
-			console.log(`Playing: **${song.title}** as requested by: **${song.requester}** in guild: ${msg.guild.name}`);
+			console.log(`Playing: ${song.title} as requested by: ${song.requester} in guild: ${msg.guild.name}`);
 			dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, { audioonly: true }), { passes : tokens.passes });
 			let collector = msg.channel.createCollector(m => m);
 			collector.on('collect', m => {
@@ -87,13 +146,13 @@ const commands = {
 		});
 	},
 	'queue': (msg) => {
-		if (queue[msg.guild.id] === undefined) return msg.channel.send(`Add some songs to the queue first with ${tokens.prefix}add`);
+		if (queue[msg.guild.id].length == 0) return msg.channel.send(`Add some songs to the queue first with ${tokens.prefix}add`);
 		let tosend = [];
 		queue[msg.guild.id].songs.forEach((song, i) => { tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}`);});
 		msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** songs queued ${(tosend.length > 15 ? '*[Only next 15 shown]*' : '')}\n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
 	},
 	'help': (msg) => {
-		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song."', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"',  'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];
+		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"',  'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];
 		msg.channel.send(tosend.join('\n'));
 	},
 	/*'reboot': (msg) => {
@@ -141,7 +200,7 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
 		for(var i = 0; i < roleids.length; i++) {
 		if(roleids[i].guildid == msg.guild.id) {
 		if (msg.member.roles.has(roleids[i].roleid)) {
-		var splitcommand = msg.content.split(' ')[1];
+		var splitcommand = msg.content.split('"')[1];
 		for(var i = 0; i < customcmds[msg.guild.id].cmds.length; i++) {
     if(customcmds[msg.guild.id].cmds[i].command == splitcommand) {
 			msg.channel.send('Removed command: **' + customcmds[msg.guild.id].cmds[i].command + '** with response: **' + customcmds[msg.guild.id].cmds[i].response + '** created by: **' + customcmds[msg.guild.id].cmds[i].creator + '**')
@@ -249,5 +308,6 @@ function message(){
 	if (!msg.content.startsWith(tokens.prefix)) return;
 	if (commands.hasOwnProperty(msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0])) commands[msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0]](msg);
 }});
+
 client.login(tokens.d_token);
 //TODO komennot jotka "" merkeissä että saa monta sanaa, hae youtubesta että ei tarvitse laittaa linkkiä

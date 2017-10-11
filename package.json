@@ -11,6 +11,8 @@
     "discord.js": "11.2.1",
     "lodash": "^4.17.4",
     "node-opus": "^0.2.1",
+    "valid-url": "^1.0.9",
+    "youtube-search": "^1.0.10",
     "ytdl-core": "github:fent/node-ytdl-core#master"
   },
   "author": "BDISTIN",
