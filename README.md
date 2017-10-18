@@ -56,6 +56,7 @@ Download the master branch and put the unzipped files in a new folder on your co
 Next rename .json.example to .json and enter the correct information. *Note: You will have to remove any and all comments from the .json.example file, as they are not supported in json. They are there to guide you as you decide how you want to configure your bot*
 
 For obtaining a Discord Bot token, please see [this page.](https://discordapp.com/developers/docs/intro)
+For obtaining a YouTube api key, please see [this page.](https://developers.google.com/youtube/registering_an_application)
 
 Before running the bot you need to install the dependencies.
 In the folder you put the files in, Shift+Right click and select open command window here.

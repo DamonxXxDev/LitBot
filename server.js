@@ -207,7 +207,26 @@ const commands = {
 				} else if (m.content.startsWith(tokens.prefix + 'resume')){
 					msg.channel.send('Resumed.').then(() => {dispatcher.resume();});
 				} else if (m.content.startsWith(tokens.prefix + 'skip')){
-					msg.channel.send('Skipped.').then(() => {dispatcher.end();});
+          msg.channel.send({
+            "embed": {
+              "description": "**Skipped [" + song.title + "](" + song.info.video_url + ")**",
+              "color": 123433,
+              "thumbnail": {
+                "url": 'https://img.youtube.com/vi/' + song.info.video_id + '/mqdefault.jpg'
+              },
+              "author": {
+                "name": m.author.username,
+                "icon_url": m.author.avatarURL
+              },
+              "fields": [
+                {
+                  "name": "Channel",
+                  "value": song.info.author.name,
+                  "inline": true
+                }
+              ]
+            }
+          }).then(() => {dispatcher.end();});
 				} else if (m.content.startsWith(tokens.prefix + 'volume+')){
 					if (Math.round(dispatcher.volume*50) >= 100) return msg.channel.send(`Volume: ${Math.round(dispatcher.volume*50)}%`);
 					dispatcher.setVolume(Math.min((dispatcher.volume*50 + (2*(m.content.split('+').length-1)))/50,2));

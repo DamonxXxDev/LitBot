@@ -1,7 +1,7 @@
 {
-  "name": "ohgodmusicbot",
+  "name": "LitBot",
   "version": "1.0.0",
-  "description": "A v11 Discord.JS music bot in 100 lines or less",
+  "description": "A v12 Discord.JS music bot in 100 lines or less, forked from OhGodMusicBot",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -17,6 +17,10 @@
     "valid-url": "^1.0.9",
     "youtube-search": "^1.0.10",
     "ytdl-core": "github:fent/node-ytdl-core#master"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://tonit1@bitbucket.org/tonit1/litbot-v2.git"
   },
   "author": "BDISTIN",
   "license": "MIT"
