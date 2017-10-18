@@ -12,8 +12,8 @@
     "erlpack": "github:hammerandchisel/erlpack",
     "lodash": "^4.17.4",
     "node-opus": "^0.2.1",
-    "sodium": "^2.0.1",
     "uws": "^0.14.5",
+    "sodium": "^2.0.1",
     "valid-url": "^1.0.9",
     "youtube-search": "^1.0.10",
     "ytdl-core": "github:fent/node-ytdl-core#master"
