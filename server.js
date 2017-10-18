@@ -358,7 +358,13 @@ client.on('ready', () => {
 });
 
 client.on('guildCreate',function(guild){
-	guild.channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the Bot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+  const defaultChannel = guild => guild.channels
+      .filter(c => c.type === "text" &&
+          c.permissionsFor(client.user).has("SEND_MESSAGES"))
+      .sort((a, b) => a.position - b.position ||
+          Long.fromString(a.id).sub(Long.fromString(b.id)).toNumber())
+      .first();
+	defaultChannel.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the Bot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
 	guild.createRole({
     name: "LitBot Controller",
 		color: "BLUE"
@@ -424,5 +430,4 @@ function message(){
 	if (commands.hasOwnProperty(msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0])) commands[msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0]](msg);
 }});
 
-client.login(tokens.d_token);
-//TODO komennot jotka "" merkeissä että saa monta sanaa, hae youtubesta että ei tarvitse laittaa linkkiä
+client.login(tokens.d_token).catch(console.error);
