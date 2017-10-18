@@ -12,11 +12,15 @@ var opts = {
 let queue = {};
 let customcmds = {};
 let roleids = [];
+let canPlay = {};
+let nowPlaying = [];
 const fs = require('fs');
 
 const commands = {
 	'play': (msg) => {
-
+    if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0;
+    if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send('Someone is choosing a song to play on this channel. Please wait 20 seconds and try again.');
+    if (canPlay[msg.channel.id].canPlay == false) return;
 		if (!msg.guild.voiceConnection) return commands.join(msg).then(() => commands.play(msg));
 		if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].songs = [];
 		let url = msg.content.split(' ')[1];
@@ -24,9 +28,43 @@ const commands = {
 		if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}play`);
 		yt.getInfo(url, (err, info) => {
 			if(err) return msg.channel.send('Invalid YouTube Link: ' + err);
-			queue[msg.guild.id].songs.push({url: url, title: info.title, requester: msg.author.username});
+			queue[msg.guild.id].songs.push({url: url, title: info.title, requester: msg.author.username, info: info, avatarURL: msg.author.avatarURL});
 			if (queue[msg.guild.id].playing == true) {
-			msg.channel.send(`added **${info.title}** to the queue`);
+        var minutes = Math.floor(info.length_seconds / 60);
+        var seconds = info.length_seconds - minutes * 60;
+        var finalTime = minutes + ':' + seconds;
+        var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
+        m.channel.send({
+          "embed": {
+            "description": "**Added song to queue: [" + info.title + "](" + url + ")**",
+            "color": 123433,
+            "thumbnail": {
+              "url": thumbUrl
+            },
+            "author": {
+              "name": msg.author.username,
+              "icon_url": msg.author.avatarURL
+            },
+            "fields": [
+              {
+                "name": "Channel",
+                "value": info.author.name,
+                "inline": true
+              },
+              {
+                "name": "Duration",
+                "value": finalTime,
+                "inline": true
+              },
+              {
+                "name": "Position in queue",
+                "value": queue[msg.guild.id].length,
+                "inline": true
+              }
+            ]
+          }
+        }
+      )
 			} else {
 			let dispatcher;
 			queue[msg.guild.id].playing = true;
@@ -43,7 +81,7 @@ const commands = {
 	search(searchTerms, opts, function(err,results){
 	if(err) return console.log('Error searching youtube: ' + err);
 	//console.dir(results);
-  var tosend = ['**Select a song with the `' + tokens.prefix + 'select n` command, or cancel using the `' + tokens.prefix + 'cancel` command: **'];
+  var tosend = ['**Select a song with the `' + tokens.prefix + 'play (song)` command, or cancel using the `' + tokens.prefix + 'cancel` command (Automatically cancels after 20 seconds.): **'];
   for (i = 0; i < results.length; i++) {
     var lineNumber = i + 1;
     tosend.push(lineNumber + ': ' + results[i].title);
@@ -51,9 +89,11 @@ const commands = {
   msg.channel.send(tosend.join("\n"));
   let collector = msg.channel.createCollector(m => m);
   var timeout = setTimeout(function() {msg.channel.send('Canceled playing song.'); collector.stop(); }, 20000);
+  canPlay[msg.channel.id].canPlay = false;
+  canPlay[msg.channel.id].id = msg.author.id;
   collector.on('collect', m => {
     if(!m.author.id == msg.author.id) return;
-    if(m.content.startsWith(tokens.prefix + 'select ')) {
+    if(m.content.startsWith(tokens.prefix + 'play ')) {
     var parts = m.content.split(' ');
     parts.shift();
   	var number = parts.join(' ');
@@ -62,38 +102,102 @@ const commands = {
     var number = number - 1;
     var url = results[number].link;
     yt.getInfo(url, (err, info) => {
-			if(err) { msg.channel.send('Error playing song, try again later.'); collector.stop(); clearTimeout(timeout); return; }
-			queue[msg.guild.id].songs.push({url: url, title: info.title, requester: msg.author.username});
+			if(err) { msg.channel.send('Error playing song: `' + err + '`'); collector.stop(); clearTimeout(timeout); return; }
+			queue[msg.guild.id].songs.push({url: url, title: info.title, requester: msg.author.username, info: info, avatarURL: msg.author.avatarURL});
 			if (queue[msg.guild.id].playing == true) {
-			msg.channel.send(`added **${info.title}** to the queue`);
+      var minutes = Math.floor(info.length_seconds / 60);
+      var seconds = info.length_seconds - minutes * 60;
+      var finalTime = minutes + ':' + seconds;
+      m.channel.send({
+        "embed": {
+          "description": "**Added song to queue: [" + info.title + "](" + url + ")**",
+          "color": 123433,
+          "thumbnail": {
+            "url": results[number].thumbnails.high.url
+          },
+          "author": {
+            "name": m.author.username,
+            "icon_url": m.author.avatarURL
+          },
+          "fields": [
+            {
+              "name": "Channel",
+              "value": results[number].channelTitle,
+              "inline": true
+            },
+            {
+              "name": "Duration",
+              "value": finalTime,
+              "inline": true
+            },
+            {
+              "name": "Position in queue",
+              "value": queue[m.guild.id].songs.length,
+              "inline": true
+            }
+          ]
+        }
+      }
+      );
       collector.stop();
+      canPlay[msg.channel.id].canPlay = true;
+      delete canPlay[msg.channel.id].id;
       clearTimeout(timeout);
 			} else {
 			let dispatcher;
 			queue[msg.guild.id].playing = true;
 			play(queue[msg.guild.id].songs.shift());
       collector.stop();
+      canPlay[msg.channel.id].canPlay = true;
+      delete canPlay[msg.channel.id].id;
       clearTimeout(timeout);
 			}
 		});
   } else {
     if(!m.content.startsWith(tokens.prefix + 'cancel')) return;
     collector.stop();
-    m.channel.send('Canceled playing song.')
+    m.channel.send('Canceled playing song.');
+    canPlay[msg.channel.id].canPlay = true;
+    delete canPlay[msg.channel.id].id;
     clearTimeout(timeout);
   }
   });
 	});
 	}
-
-
 		//console.log(queue);
 		function play(song) {
 			if (song === undefined) return msg.channel.send('Queue is empty. Leaving from voice channel.').then(() => {
 				queue[msg.guild.id].playing = false;
 				msg.member.voiceChannel.leave();
 			});
-			msg.channel.send(`Playing: **${song.title}** as requested by: **${song.requester}**`);
+      var minutes = Math.floor(song.info.length_seconds / 60);
+      var seconds = song.info.length_seconds - minutes * 60;
+      var finalTime = minutes + ':' + seconds;
+			msg.channel.send({
+        "embed": {
+          "description": "**Playing: [" + song.title + "](" + song.info.video_url + ")**",
+          "color": 123433,
+          "thumbnail": {
+            "url": 'https://img.youtube.com/vi/' + song.info.video_id + '/mqdefault.jpg'
+          },
+          "author": {
+            "name": song.requester,
+            "icon_url": song.avatarURL
+          },
+          "fields": [
+            {
+              "name": "Channel",
+              "value": song.info.author.name,
+              "inline": true
+            },
+            {
+              "name": "Duration",
+              "value": finalTime,
+              "inline": true
+            }
+          ]
+        }
+      });
 			console.log(`Playing: ${song.title} as requested by: ${song.requester} in guild: ${msg.guild.name}`);
 			dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, { audioonly: true }), { passes : tokens.passes });
 			let collector = msg.channel.createCollector(m => m);
@@ -135,21 +239,13 @@ const commands = {
 			voiceChannel.join().then(connection => resolve(connection)).catch(err => reject(err));
 		});
 	},
-	'add': (msg) => {
-		let url = msg.content.split(' ')[1];
-		if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, or id after ${tokens.prefix}add`);
-		yt.getInfo(url, (err, info) => {
-			if(err) return msg.channel.send('Invalid YouTube Link: ' + err);
-			if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].songs = [];
-			queue[msg.guild.id].songs.push({url: url, title: info.title, requester: msg.author.username});
-			msg.channel.send(`added **${info.title}** to the queue`);
-		});
-	},
 	'queue': (msg) => {
-		if (queue[msg.guild.id].length == 0) return msg.channel.send(`Add some songs to the queue first with ${tokens.prefix}add`);
+		if (queue[msg.guild.id].length == 0) return msg.channel.send(`Add some songs to the queue first with ${tokens.prefix}play`);
 		let tosend = [];
+    var songs = songs;
+    if (queue[msg.guild.id].length == 1) songs = song;
 		queue[msg.guild.id].songs.forEach((song, i) => { tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}`);});
-		msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** songs queued ${(tosend.length > 15 ? '*[Only next 15 shown]*' : '')}\n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
+		msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** ${songs} queued ${(tosend.length > 15 ? '*[Only next 15 shown]*' : '')}\n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
 	},
 	'help': (msg) => {
 		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"',  'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];

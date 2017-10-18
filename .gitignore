@@ -53,3 +53,5 @@ savedfiles/*
 start.bat
 tokens.json
 ffmpeg.exe
+info.txt
+start.sh
