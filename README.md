@@ -49,14 +49,14 @@ Extract the files to the root of your harddrive, and rename the folder to `ffmpe
 
 1. add `;c:\ffmpeg\bin` to the end of the field.
 
-### Download and Install OhGodMusicBot
+### Download and Install LitBot
 
 Next you'll need to download the bot and configure it.
 Download the master branch and put the unzipped files in a new folder on your computer.
 Next rename .json.example to .json and enter the correct information. *Note: You will have to remove any and all comments from the .json.example file, as they are not supported in json. They are there to guide you as you decide how you want to configure your bot*
 
 For obtaining a Discord Bot token, please see [this page.](https://discordapp.com/developers/docs/intro)
-For obtaining a YouTube api key, please see [this page.](https://developers.google.com/youtube/registering_an_application)
+For obtaining a YouTube API key, please see [this page.](https://developers.google.com/youtube/registering_an_application)
 
 Before running the bot you need to install the dependencies.
 In the folder you put the files in, Shift+Right click and select open command window here.
