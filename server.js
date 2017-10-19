@@ -170,10 +170,11 @@ const commands = {
 				queue[msg.guild.id].playing = false;
 				msg.member.voiceChannel.leave();
 			});
+			dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, { audioonly: true }), { passes : tokens.passes });
       var minutes = Math.floor(song.info.length_seconds / 60);
       var seconds = song.info.length_seconds - minutes * 60;
       var finalTime = minutes + ':' + seconds;
-			msg.channel.send({
+      msg.channel.send({
         "embed": {
           "description": "**Playing: [" + song.title + "](" + song.info.video_url + ")**",
           "color": 123433,
@@ -198,8 +199,7 @@ const commands = {
           ]
         }
       });
-			console.log(`Playing: ${song.title} as requested by: ${song.requester} in guild: ${msg.guild.name}`);
-			dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, { audioonly: true }), { passes : tokens.passes });
+      console.log(`Playing: ${song.title} as requested by: ${song.requester} in guild: ${msg.guild.name}`);
 			let collector = msg.channel.createCollector(m => m);
 			collector.on('collect', m => {
 				if (m.content.startsWith(tokens.prefix + 'pause')) {
@@ -358,13 +358,8 @@ client.on('ready', () => {
 });
 
 client.on('guildCreate',function(guild){
-  const defaultChannel = guild => guild.channels
-      .filter(c => c.type === "text" &&
-          c.permissionsFor(client.user).has("SEND_MESSAGES"))
-      .sort((a, b) => a.position - b.position ||
-          Long.fromString(a.id).sub(Long.fromString(b.id)).toNumber())
-      .first();
-	defaultChannel.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the Bot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+  console.log(defaultChannel);
+	guild.channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the Bot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
 	guild.createRole({
     name: "LitBot Controller",
 		color: "BLUE"
