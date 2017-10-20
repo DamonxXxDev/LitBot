@@ -292,7 +292,7 @@ const commands = {
 		console.log('Added command: **' + command + '** with response: **' + response + '** by: **' + msg.author.username + '#' + msg.author.discriminator + '** in guild: ' + msg.guild.name);
 		customcmds[msg.guild.id].cmds.push({command: command, response: response, creator: msg.author.username + '#' + msg.author.discriminator});
 		msg.channel.send('Added command: **' + args[1] + '** with response: **' + args[3] + '** by: **' + msg.author.username + '#' + msg.author.discriminator + '**');
-		fs.writeFile( "./savedfiles/cmds_" + msg.guild.id + '.json', JSON.stringify( customcmds[msg.guild.id].cmds ), "utf8", (err) => {
+		fs.writeFile( "./.data/cmds_" + msg.guild.id + '.json', JSON.stringify( customcmds[msg.guild.id].cmds ), "utf8", (err) => {
 		if (err) console.log('Error saving command to file: ' + err);
 	});
 	collector.stop();
@@ -320,7 +320,7 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
     if(customcmds[msg.guild.id].cmds[i].command == splitcommand) {
 			msg.channel.send('Removed command: **' + customcmds[msg.guild.id].cmds[i].command + '** with response: **' + customcmds[msg.guild.id].cmds[i].response + '** created by: **' + customcmds[msg.guild.id].cmds[i].creator + '**')
       customcmds[msg.guild.id].cmds.splice(i, 1);
-			fs.writeFile( "./savedfiles/cmds_" + msg.guild.id + '.json', JSON.stringify( customcmds[msg.guild.id].cmds ), "utf8", (err) => {
+			fs.writeFile( "./.data/cmds_" + msg.guild.id + '.json', JSON.stringify( customcmds[msg.guild.id].cmds ), "utf8", (err) => {
 			if (err) console.log('Error saving commands to file: ' + err);
 			});
       break;
@@ -332,11 +332,11 @@ msg.channel.send("Couldn't add command, because you're not in the Bot Controller
 };
 client.on('ready', () => {
 	console.log('ready!');
-	fs.stat('./savedfiles/', (err,stat) => {
+	fs.stat('./.data/', (err,stat) => {
 		if(err == null) {
-	fs.stat('./savedfiles/roleids.json', (err, stat) => {
+	fs.stat('./.data/roleids.json', (err, stat) => {
 		if(err == null) {
-			fs.readFile("./savedfiles/roleids.json", (err, data) => {
+			fs.readFile("./.data/roleids.json", (err, data) => {
 			if(err) {
 			console.log('Error reading roleids from file: ' + err);
 			}else{
@@ -351,9 +351,9 @@ client.on('ready', () => {
 });
 } else if (err.code == 'ENOENT') {
 	// file does not exist
-	fs.mkdirSync('./savedfiles/');
+	fs.mkdirSync('./.data/');
 } else {
-	console.log('Error checking if ./savedfiles/ exists: ', err.code);
+	console.log('Error checking if ./.data/ exists: ', err.code);
 }});
 });
 
@@ -369,7 +369,7 @@ client.on('guildCreate',function(guild){
 		function writeRolesToFile(role){
 		roleids.push({guildid: guild.id, roleid: role.id})
 		console.log('Bot added to guild ' + guild.name);
-		fs.writeFile( "./savedfiles/roleids.json", JSON.stringify( roleids ), "utf8", (err) => {
+		fs.writeFile( "./.data/roleids.json", JSON.stringify( roleids ), "utf8", (err) => {
 		if (err) console.log('Error saving admin role to file: ' + err);
 	});
 }});
@@ -378,16 +378,16 @@ client.on('guildDelete',function(guild){
 	for(var i = 0; i < roleids.length; i++) {
 	if(roleids[i].guildid == guild.id) {
 	roleids.splice(i, 1);
-	fs.writeFile( "./savedfiles/roleids.json", JSON.stringify( roleids ), "utf8", (err) => {
+	fs.writeFile( "./.data/roleids.json", JSON.stringify( roleids ), "utf8", (err) => {
 	if (err) console.log('Error saving admin role to file: ' + err);
 });
 }}});
 client.on('message', msg => {
 	if (!customcmds.hasOwnProperty(msg.guild.id)) {
 		customcmds[msg.guild.id] = {};
-		fs.stat('./savedfiles/cmds_' + msg.guild.id + '.json', (err, stat) => {
+		fs.stat('./.data/cmds_' + msg.guild.id + '.json', (err, stat) => {
     	if(err == null) {
-				fs.readFile("./savedfiles/cmds_" + msg.guild.id + '.json', (err, data) => {
+				fs.readFile("./.data/cmds_" + msg.guild.id + '.json', (err, data) => {
 		  	if (err) { console.log ('Error reading custom commands from file: ' + err);
 				customcmds[msg.guild.id].cmds = [];
 				message();
@@ -405,8 +405,8 @@ client.on('message', msg => {
 					message();
     }
 });
-	/*if (fs.existsSync('./savedfiles/cmds_' + msg.guild.id + '.json')) {
-		fs.readFile("./savedfiles/cmds_" + msg.guild.id + '.json', (err, data) => {
+	/*if (fs.existsSync('./.data/cmds_' + msg.guild.id + '.json')) {
+		fs.readFile("./.data/cmds_" + msg.guild.id + '.json', (err, data) => {
 	  if (err) { console.log ('Error reading custom commands from file: ' + err);
 		customcmds[msg.guild.id].cmds = [];
 	 } else {
