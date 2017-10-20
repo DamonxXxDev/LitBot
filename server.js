@@ -15,14 +15,14 @@ let roleids = [];
 let canPlay = {};
 let nowPlaying = [];
 const fs = require('fs');
-
+//tee global var dispatcher[msg.guild.id] tai queue[msg.guild.id].dispatcher autoplaylistiä varten
 const commands = {
 	'play': (msg) => {
     if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0;
     if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send('Someone is choosing a song to play on this channel. Please wait 20 seconds and try again.');
     if (canPlay[msg.channel.id].canPlay == false) return;
 		if (!msg.guild.voiceConnection) return commands.join(msg).then(() => commands.play(msg));
-		if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].songs = [];
+		if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
 		let url = msg.content.split(' ')[1];
 		if(urlchk.isWebUri(url)){
 		if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}play`);
@@ -34,7 +34,7 @@ const commands = {
         var seconds = info.length_seconds - minutes * 60;
         var finalTime = minutes + ':' + seconds;
         var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
-        m.channel.send({
+        msg.channel.send({
           "embed": {
             "description": "**Added song to queue: [" + info.title + "](" + url + ")**",
             "color": 123433,
@@ -58,7 +58,7 @@ const commands = {
               },
               {
                 "name": "Position in queue",
-                "value": queue[msg.guild.id].length,
+                "value": queue[msg.guild.id].songs.length,
                 "inline": true
               }
             ]
@@ -68,7 +68,13 @@ const commands = {
 			} else {
 			let dispatcher;
 			queue[msg.guild.id].playing = true;
-			play(queue[msg.guild.id].songs.shift());
+      if (queue[msg.guild.id].loop == true){
+      var songPush = queue[msg.guild.id].songs.shift();
+      play(songPush);
+      queue[msg.guild.id].songs.push(songPush);
+    } else {
+      play(queue[msg.guild.id].songs.shift());
+    }
 			}
 		});
 	}else{
@@ -146,7 +152,13 @@ const commands = {
 			} else {
 			let dispatcher;
 			queue[msg.guild.id].playing = true;
-			play(queue[msg.guild.id].songs.shift());
+      if (queue[msg.guild.id].loop == true){
+      var songPush = queue[msg.guild.id].songs.shift();
+      play(songPush);
+      queue[msg.guild.id].songs.push(songPush);
+      } else {
+      play(queue[msg.guild.id].songs.shift());
+      }
       collector.stop();
       canPlay[msg.channel.id].canPlay = true;
       delete canPlay[msg.channel.id].id;
@@ -210,7 +222,7 @@ const commands = {
           msg.channel.send({
             "embed": {
               "description": "**Skipped [" + song.title + "](" + song.info.video_url + ")**",
-              "color": 123433,
+              "color": 14335,
               "thumbnail": {
                 "url": 'https://img.youtube.com/vi/' + song.info.video_id + '/mqdefault.jpg'
               },
@@ -235,18 +247,62 @@ const commands = {
 					if (Math.round(dispatcher.volume*50) <= 0) return msg.channel.send(`Volume: ${Math.round(dispatcher.volume*50)}%`);
 					dispatcher.setVolume(Math.max((dispatcher.volume*50 - (2*(m.content.split('-').length-1)))/50,0));
 					msg.channel.send(`Volume: ${Math.round(dispatcher.volume*50)}%`);
-				} else if (m.content.startsWith(tokens.prefix + 'time')){
-					msg.channel.send(`time: ${Math.floor(dispatcher.time / 60000)}:${Math.floor((dispatcher.time % 60000)/1000) <10 ? '0'+Math.floor((dispatcher.time % 60000)/1000) : Math.floor((dispatcher.time % 60000)/1000)}`);
+				} else if (m.content.startsWith(tokens.prefix + 'np')){
+          var minutes = Math.floor(song.info.length_seconds / 60);
+          var seconds = song.info.length_seconds - minutes * 60;
+          var finalTime = minutes + ':' + seconds;
+          m.channel.send({
+            "embed": {
+              "description": "**Now Playing: [" + song.title + "](" + song.info.video_url + ")**",
+              "color": 16073282,
+              "thumbnail": {
+                "url": 'https://img.youtube.com/vi/' + song.info.video_id + '/mqdefault.jpg'
+              },
+              "author": {
+                "name": m.author.username,
+                "icon_url": m.author.avatarURL
+              },
+              "fields": [
+                {
+                  "name": "Channel",
+                  "value": song.info.author.name,
+                  "inline": true
+                },
+                {
+                  "name": "Duration",
+                  "value": finalTime,
+                  "inline": true
+                },
+                {
+                  "name": "Playtime",
+                  "value": `${Math.floor(dispatcher.time / 60000)}:${Math.floor((dispatcher.time % 60000)/1000) <10 ? '0'+Math.floor((dispatcher.time % 60000)/1000) : Math.floor((dispatcher.time % 60000)/1000)}/` + finalTime,
+                  "inline": true
+                }
+              ]
+            }
+          });
 				}
 			});
 			dispatcher.on('end', () => {
 				collector.stop();
+        if (queue[msg.guild.id].loop == true){
+        var songPush = queue[msg.guild.id].songs.shift();
+        play(songPush);
+        if (!songPush == undefined) queue[msg.guild.id].songs.push(songPush);
+      } else {
 				play(queue[msg.guild.id].songs.shift());
+      }
 			});
 			dispatcher.on('error', (err) => {
 				return msg.channel.send('error: ' + err).then(() => {
 					collector.stop();
-					play(queue[msg.guild.id].songs.shift());
+          if (queue[msg.guild.id].loop == true){
+          var songPush = queue[msg.guild.id].songs.shift();
+          play(songPush);
+          queue[msg.guild.id].songs.push(songPush);
+        } else {
+  				play(queue[msg.guild.id].songs.shift());
+        }
 				});
 			});
 		}
@@ -259,15 +315,47 @@ const commands = {
 		});
 	},
 	'queue': (msg) => {
-		if (queue[msg.guild.id].length == 0) return msg.channel.send(`Add some songs to the queue first with ${tokens.prefix}play`);
+    if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
+		if (queue[msg.guild.id].songs.length == 0) return msg.channel.send(`Add some songs to the queue first with ${tokens.prefix}play`);
 		let tosend = [];
-    var songs = songs;
-    if (queue[msg.guild.id].length == 1) songs = song;
+    var songs = "songs";
+    if (queue[msg.guild.id].songs.length == 1) songs = "song";
 		queue[msg.guild.id].songs.forEach((song, i) => { tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}`);});
 		msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** ${songs} queued ${(tosend.length > 15 ? '*[Only next 15 shown]*' : '')}\n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
 	},
+  'shuffle': (msg) => {
+    if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
+    if (queue[msg.guild.id].songs.length == 0) return msg.channel.send("Please add songs to the queue before shuffling.")
+    originalQueue = queue[msg.guild.id].songs;
+    function shuffle(a) {
+      var j, x, i;
+      for (i = a.length - 1; i > 0; i--) {
+          j = Math.floor(Math.random() * (i + 1));
+          x = a[i];
+          a[i] = a[j];
+          a[j] = x;
+      }
+  }
+  shuffle(queue[msg.guild.id].songs);
+  if (queue[msg.guild.id].songs == originalQueue) shuffle(queue[msg.guild.id].songs);
+  msg.channel.send("Shuffled queue.");
+	},
+  'loopqueue': (msg) => {
+    if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
+    if(!queue[msg.guild.id].hasOwnProperty("loop")) queue[msg.guild.id].loop = false;
+		if(queue[msg.guild.id].loop == false) {
+    queue[msg.guild.id].loop = true;
+    msg.channel.send("Enabled queue loop.");
+    return;
+    }
+    if(queue[msg.guild.id].loop == true) {
+    queue[msg.guild.id].loop = false;
+    msg.channel.send("Disabled queue loop.");
+    return;
+    }
+	},
 	'help': (msg) => {
-		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"',  'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];
+		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"', tokens.prefix + "shuffle: Shuffles queue.", tokens.prefix + "loopqueue: Puts queue on loop.", 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];
 		msg.channel.send(tosend.join('\n'));
 	},
 	/*'reboot': (msg) => {
