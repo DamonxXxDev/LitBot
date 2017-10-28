@@ -5,6 +5,8 @@ var urlchk = require('valid-url');
 const tokens = require('./.data/tokens.json');
 const client = new Client();
 var search = require('youtube-search');
+var request = require('request');
+var cheerio = require('cheerio');
 var opts = {
   maxResults: 5,
   key: tokens.yt_api_key
@@ -14,6 +16,7 @@ let customcmds = {};
 let roleids = [];
 let canPlay = {};
 let nowPlaying = [];
+var saleDataArray = {};
 const fs = require('fs');
 //tee global var dispatcher[msg.guild.id] tai queue[msg.guild.id].dispatcher autoplaylistiä varten
 const commands = {
@@ -355,7 +358,7 @@ const commands = {
     }
 	},
 	'help': (msg) => {
-		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"', tokens.prefix + "shuffle: Shuffles queue.", tokens.prefix + "loopqueue: Puts queue on loop.", 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];
+		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', tokens.prefix + "shuffle: Shuffles queue.", tokens.prefix + "loopqueue: Puts queue on loop.", tokens.prefix + 'steam sale: Shows the next steam sale.', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];
 		msg.channel.send(tosend.join('\n'));
 	},
 	/*'reboot': (msg) => {
@@ -414,10 +417,120 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
       break;
     }
 	}
-} else {
-msg.channel.send("Couldn't add command, because you're not in the Bot Controller role.");
-}}}}
-};
+  } else {
+    msg.channel.send("Couldn't add command, because you're not in the Bot Controller role.");
+  }}}},
+  'steam': (msg) => {
+    var args = msg.content.split(' ');
+      if(args[1] == "sale"){
+        var today = new Date();
+        if (!saleDataArray.hasOwnProperty("time")){
+        saleDataArray.time = 0;
+        }
+        var diff = today.getTime() - saleDataArray.time;
+        if(diff > 3600000){
+        request("https://www.whenisthenextsteamsale.com/", function(error, response, body) {
+          if(error) {
+            console.log("Error: " + error);
+            msg.channel.send("Error getting sale info.");
+            return;
+          	}
+            var $ = cheerio.load(body);
+            if($('#form1').serializeArray()[3] == undefined){
+              msg.channel.send("Error reading sale info. Site has probably changed.");
+              console.log("Error reading sale info. Site has probably changed.");
+              return;
+            }
+            var saleData = JSON.stringify($('#form1').serializeArray()[3].value);
+            var saleDataLC = saleData.replace(/"([^"]+)":/g,function($0,$1){return ('"'+$1.toLowerCase()+'":');});
+            //saleDataLC = saleDataLC.replace("length","salelength");
+            saleDataArray = JSON.parse(saleDataLC);
+            saleDataArray = JSON.parse(saleDataArray);
+            saleDataArray.time = today.getTime();
+            sale();
+            })
+            }else{
+              sale();
+            }
+            function sale(){
+            var confirmed;
+            if (saleDataArray.isconfirmed == true)
+            {
+              confirmed = "Yes";
+            }else{
+              confirmed = "No";
+            }
+            var startdatesplit = saleDataArray.startdate.split("T");
+            var startdate = startdatesplit[0].split("-");
+            var starttime = startdatesplit[1].split(":");
+            var saleStartDate = new Date(startdate[0], startdate[1], startdate[2],starttime[0],starttime[1],starttime[2]);
+            var saleStartHour;
+            if (saleStartDate.getHours() > -1 && saleStartDate.getHours() < 10)
+            {
+              saleStartHour = "0" + saleStartDate.getHours().toString();
+            }else{
+              saleStartHour = saleStartDate.getHours().toString();
+            }
+            var saleStartMin;
+            if (saleStartDate.getMinutes() > -1 && saleStartDate.getMinutes() < 10)
+            {
+              saleStartMin = "0" + saleStartDate.getMinutes().toString();
+            }else{
+              saleStartMin = saleStartDate.getMinutes().toString();
+            }
+            var enddatesplit = saleDataArray.enddate.split("T");
+            var enddate = enddatesplit[0].split("-");
+            var endtime = enddatesplit[1].split(":");
+            var saleEndDate = new Date(enddate[0], enddate[1], enddate[2],endtime[0],endtime[1],endtime[2]);
+            var saleEndHour;
+            if (saleEndDate.getHours() > -1 && saleEndDate.getHours() < 10)
+            {
+              saleEndHour = "0" + saleEndDate.getHours().toString();
+            }else{
+              saleEndHour = saleEndDate.getHours().toString();
+            }
+            var saleEndMin;
+            if (saleEndDate.getMinutes() > -1 && saleEndDate.getMinutes() < 10)
+            {
+              saleEndMin = "0" + saleEndDate.getMinutes().toString();
+            }else{
+              saleEndMin = saleEndDate.getMinutes().toString();
+            }
+            msg.channel.send({
+              "embed": {
+                "description": "**Next [Steam](http://store.steampowered.com/) sale: " + saleDataArray.name + "**",
+                "color": 123433,
+                "footer": {
+                  "text": "Times in UTC/GMT. Source: https://www.whenisthenextsteamsale.com/"
+                },
+                "author": {
+                  "name": msg.author.username,
+                  "icon_url": msg.author.avatarURL
+                },
+                "fields": [
+                  {
+                    "name": "Sale Date Confirmed",
+                    "value": confirmed,
+                    "inline": true
+                  },
+                  {
+                    "name": "Start Date",
+                    "value": saleStartDate.toDateString() + " " + saleStartHour + ":" + saleStartMin,
+                    "inline": true
+                  },
+                  {
+                    "name": "End Date",
+                    "value": saleEndDate.toDateString() + " " + saleEndHour + ":" + saleEndMin,
+                    "inline": true
+                  }
+                ]
+              }
+            }
+          )
+        }
+  }
+}
+}
 client.on('ready', () => {
 	console.log('ready!');
 	fs.stat('./.data/', (err,stat) => {
