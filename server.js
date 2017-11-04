@@ -35,6 +35,7 @@ const commands = {
 			if (queue[msg.guild.id].playing == true) {
         var minutes = Math.floor(info.length_seconds / 60);
         var seconds = info.length_seconds - minutes * 60;
+        if(seconds > -1 && seconds < 10) seconds = "0" + seconds;
         var finalTime = minutes + ':' + seconds;
         var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
         msg.channel.send({
@@ -116,6 +117,7 @@ const commands = {
 			if (queue[msg.guild.id].playing == true) {
       var minutes = Math.floor(info.length_seconds / 60);
       var seconds = info.length_seconds - minutes * 60;
+      if(seconds > -1 && seconds < 10) seconds = "0" + seconds;
       var finalTime = minutes + ':' + seconds;
       m.channel.send({
         "embed": {
@@ -188,6 +190,7 @@ const commands = {
 			dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, { audioonly: true }), { passes : tokens.passes });
       var minutes = Math.floor(song.info.length_seconds / 60);
       var seconds = song.info.length_seconds - minutes * 60;
+      if(seconds > -1 && seconds < 10) seconds = "0" + seconds;
       var finalTime = minutes + ':' + seconds;
       msg.channel.send({
         "embed": {
@@ -253,6 +256,7 @@ const commands = {
 				} else if (m.content.startsWith(tokens.prefix + 'np')){
           var minutes = Math.floor(song.info.length_seconds / 60);
           var seconds = song.info.length_seconds - minutes * 60;
+          if(seconds > -1 && seconds < 10) seconds = "0" + seconds;
           var finalTime = minutes + ':' + seconds;
           m.channel.send({
             "embed": {
@@ -537,6 +541,7 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
 }
 client.on('ready', () => {
 	console.log('ready!');
+  client.user.setGame(`on ${client.guilds.size} servers`);
 	fs.stat('./.data/', (err,stat) => {
 		if(err == null) {
 	fs.stat('./.data/roleids.json', (err, stat) => {
@@ -563,6 +568,7 @@ client.on('ready', () => {
 });
 
 client.on('guildCreate',function(guild){
+  client.user.setGame(`on ${client.guilds.size} servers`);
   console.log(defaultChannel);
 	guild.channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the Bot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
 	guild.createRole({
@@ -579,6 +585,7 @@ client.on('guildCreate',function(guild){
 	});
 }});
 client.on('guildDelete',function(guild){
+  client.user.setGame(`on ${client.guilds.size} servers`);
 	console.log('Removed from guild: ' + guild.name)
 	for(var i = 0; i < roleids.length; i++) {
 	if(roleids[i].guildid == guild.id) {
@@ -624,6 +631,7 @@ client.on('message', msg => {
 message();
 }
 function message(){
+  if(msg.author.bot) return;
 	let obj = customcmds[msg.guild.id].cmds.find(o => o.command === msg.content.toLowerCase());
 	if (obj) msg.channel.send(obj.response);
 	if (!msg.content.startsWith(tokens.prefix)) return;
