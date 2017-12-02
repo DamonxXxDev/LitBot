@@ -7,6 +7,7 @@ const client = new Client();
 var search = require('youtube-search');
 var request = require('request');
 var cheerio = require('cheerio');
+
 var opts = {
   maxResults: 5,
   key: tokens.yt_api_key
@@ -362,7 +363,7 @@ const commands = {
     }
 	},
 	'help': (msg) => {
-		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', tokens.prefix + "shuffle: Shuffles queue.", tokens.prefix + "loopqueue: Puts queue on loop.", tokens.prefix + 'steam sale: Shows the next steam sale.', tokens.prefix + 'ping: Shows latency.', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"' , tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',	'volume+(+++): "Increases volume by 2%."',	'volume-(---): "Decreases volume by 2%."',	'```'];
+		let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play <search terms/url>: "Play a song. "', tokens.prefix + 'shuffle: "Shuffles queue."', tokens.prefix + 'loopqueue: "Puts queue on loop."', tokens.prefix + 'steam sale: "Shows the next steam sale."', tokens.prefix + 'ping: "Shows latency."', 'Bot Controller commands:', tokens.prefix + 'addcommand <command> <response>: "Adds a custom command."' , tokens.prefix + 'removecommand <command>: "Removes a custom command."', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."',	tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."',  tokens.prefix + 'volume+(+++): "Increases volume by 2%."',  tokens.prefix + 'volume-(---): "Decreases volume by 2%."', tokens.prefix + 'weather <city>: "Show weather in city."' + '```'];
 		msg.channel.send(tosend.join('\n'));
 	},
 	/*'reboot': (msg) => {
@@ -464,10 +465,8 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
             }else{
               confirmed = "No";
             }
-            var startdatesplit = saleDataArray.startdate.split("T");
-            var startdate = startdatesplit[0].split("-");
-            var starttime = startdatesplit[1].split(":");
-            var saleStartDate = new Date(startdate[0], startdate[1], startdate[2],starttime[0],starttime[1],starttime[2]);
+            var saleStartDate = new Date(Date.parse(saleDataArray.startdate));
+
             var saleStartHour;
             if (saleStartDate.getHours() > -1 && saleStartDate.getHours() < 10)
             {
@@ -482,10 +481,8 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
             }else{
               saleStartMin = saleStartDate.getMinutes().toString();
             }
-            var enddatesplit = saleDataArray.enddate.split("T");
-            var enddate = enddatesplit[0].split("-");
-            var endtime = enddatesplit[1].split(":");
-            var saleEndDate = new Date(enddate[0], enddate[1], enddate[2],endtime[0],endtime[1],endtime[2]);
+            var saleEndDate = new Date(Date.parse(saleDataArray.enddate));
+
             var saleEndHour;
             if (saleEndDate.getHours() > -1 && saleEndDate.getHours() < 10)
             {
@@ -500,6 +497,7 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
             }else{
               saleEndMin = saleEndDate.getMinutes().toString();
             }
+
             msg.channel.send({
               "embed": {
                 "description": "**Next [Steam](http://store.steampowered.com/) sale: " + saleDataArray.name + "**",
@@ -534,10 +532,84 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
         }
   }
 },
+'weather': (msg) => {
+  var args = msg.content.split(' ');
+  args.splice(0,1);
+  request("http://api.openweathermap.org/data/2.5/weather?q=" + args[0] + "&type=like&lang=en&cnt=1&APPID=" + tokens.weatherkey, function(error, response, body) {
+    if(error) {
+      console.log("Error: " + error);
+      msg.channel.send("Error getting weather info.");
+      return;
+      }
+      obj = JSON.parse(body);
+      if(obj.message == "city not found"){
+        msg.channel.send("City not found.");
+        return;
+      }
+      if (!obj.cod == 200)
+      {
+        msg.channel.send("Error getting weather data.");
+        return;
+      }
+      var tosend = [];
+      var currentdate = new Date();
+      /*var datetime = currentdate.getDate() + "/"
+                + (currentdate.getMonth()+1)  + "/"
+                + currentdate.getFullYear() + " "
+                + currentdate.getHours() + ":"
+                + currentdate.getMinutes() + ":"
+                + currentdate.getSeconds();*/
+      //tosend.push("Weather - " + obj.city.name + "," + obj.city.country + " (" + obj.list[0].dt_txt + ") \nCurrent conditions: " + capitalizeFirstLetter(obj.list[0].weather[0].description) + ", " + Math.round(obj.list[0].main.temp - 273.15) + " °C");
+      msg.channel.send({
+        "embed": {
+          "description": "**Weather for: [" + obj.name + ", " + obj.sys.country + "](https://openweathermap.org/city/" + obj.sys.id + ")**",
+          "color": 16073282,
+          "thumbnail": {
+            "url": 'http://openweathermap.org/img/w/' + obj.weather[0].icon + ".png"
+          },
+          "author": {
+            "name": msg.author.username,
+            "icon_url": msg.author.avatarURL
+          },
+          "fields": [
+            {
+              "name": "Weather condition",
+              "value": capitalizeFirstLetter(obj.weather[0].description),
+              "inline": true
+            },
+            {
+              "name": "Temperature",
+              "value": Math.round(obj.main.temp - 273.15) + " °C",
+              "inline": true
+            },
+            {
+              "name": "Humidity",
+              "value": obj.main.humidity + "%",
+              "inline": true
+            },
+            {
+              "name": "Wind",
+              "value": "Speed: " + obj.wind.speed + " m/s " + "Degrees: " + obj.wind.deg + "°",
+              "inline": true
+            },
+            {
+              "name": "Cloudiness",
+              "value": obj.clouds.all + "%",
+              "inline": true
+            }
+          ]
+        }
+      });
+      //obj.list.forEach((cmd, i) => { tosend.push(`Command: ${cmd.command} Response: ${cmd.response} - Created by: ${cmd.creator}`);});
+    });
+},
 'ping': (msg) => {
   msg.channel.send("Ping?")
   .then(m => m.edit(`Pong! Latency is ${m.createdTimestamp - msg.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`));
 }
+}
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 client.on('ready', () => {
 	console.log('ready!');
