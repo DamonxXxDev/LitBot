@@ -13,6 +13,7 @@ var opts = {
   key: tokens.yt_api_key
 };
 let queue = {};
+let weatherdata = {};
 let customcmds = {};
 let roleids = [];
 let canPlay = {};
@@ -83,9 +84,6 @@ const commands = {
 			}
 		});
 	}else{
-  function isNumeric(n) {
-  return !isNaN(parseFloat(n)) && isFinite(n);
-  }
   var parts = msg.content.split(' ');
   parts.shift();
 	var searchTerms = parts.join(' ');
@@ -535,13 +533,22 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
 'weather': (msg) => {
   var args = msg.content.split(' ');
   args.splice(0,1);
+  var today = new Date();
+  var arg0 = args[0].toLowerCase();
+  if (!weatherdata.hasOwnProperty(arg0)){
+  weatherdata[arg0] = {};
+  weatherdata[arg0].time = 0;
+  weatherdata[arg0].data = {};
+  }
+  var diff = today.getTime() - weatherdata[arg0].time;
+  if (diff > 600000) {
   request("http://api.openweathermap.org/data/2.5/weather?q=" + args[0] + "&type=like&lang=en&cnt=1&APPID=" + tokens.weatherkey, function(error, response, body) {
     if(error) {
       console.log("Error: " + error);
       msg.channel.send("Error getting weather info.");
       return;
       }
-      obj = JSON.parse(body);
+      var obj = JSON.parse(body);
       if(obj.message == "city not found"){
         msg.channel.send("City not found.");
         return;
@@ -551,8 +558,17 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
         msg.channel.send("Error getting weather data.");
         return;
       }
+      weatherdata[arg0].time = today.getTime();
+      weatherdata[arg0].data = obj;
+      send(obj);
+    });
+  }else{
+    send(weatherdata[arg0].data);
+  }
+    function send (obj) {
       var tosend = [];
       var currentdate = new Date();
+
       /*var datetime = currentdate.getDate() + "/"
                 + (currentdate.getMonth()+1)  + "/"
                 + currentdate.getFullYear() + " "
@@ -600,16 +616,38 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
           ]
         }
       });
+    }
       //obj.list.forEach((cmd, i) => { tosend.push(`Command: ${cmd.command} Response: ${cmd.response} - Created by: ${cmd.creator}`);});
-    });
 },
 'ping': (msg) => {
   msg.channel.send("Ping?")
   .then(m => m.edit(`Pong! Latency is ${m.createdTimestamp - msg.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`));
+},
+'notify': (msg) => {
+  var args = msg.content.split(' ');
+  args.splice(0,1);
+  var time = args[0].replace(/\D/g,'');
+  var timeFormat = args[0].replace(/[0-9]/g, '');
+  if (timeFormat == "m" || timeFormat == "min" || timeFormat == "minutes"){
+    time *= 60;
+    time *= 1000;
+    setTimeout(notify(args[1]),time);
+    msg.channel.send("Notifying you in " + time + " minutes.");
+  }
+  if (timeFormat == "ms" || timeFormat == "milliseconds"){
+    setTimeout(notify,time);
+    msg.channel.send("Notifying you in " + time + " milliseconds.");
+  }
+  function notify(reason){
+    msg.reply("You asked to be reminded of " + reason);
+  }
 }
 }
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
+}
+function isNumeric(n) {
+return !isNaN(parseFloat(n)) && isFinite(n);
 }
 client.on('ready', () => {
 	console.log('ready!');
