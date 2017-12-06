@@ -20,7 +20,6 @@ let canPlay = {};
 let nowPlaying = [];
 var saleDataArray = {};
 const fs = require('fs');
-//tee global var dispatcher[msg.guild.id] tai queue[msg.guild.id].dispatcher autoplaylistiä varten
 const commands = {
 	'play': (msg) => {
     if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0;
@@ -613,25 +612,6 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
 'ping': (msg) => {
   msg.channel.send("Ping?")
   .then(m => m.edit(`Pong! Latency is ${m.createdTimestamp - msg.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`));
-},
-'notify': (msg) => {
-  var args = msg.content.split(' ');
-  args.splice(0,1);
-  var time = args[0].replace(/\D/g,'');
-  var timeFormat = args[0].replace(/[0-9]/g, '');
-  if (timeFormat == "m" || timeFormat == "min" || timeFormat == "minutes"){
-    time *= 60;
-    time *= 1000;
-    setTimeout(notify(args[1]),time);
-    msg.channel.send("Notifying you in " + time + " minutes.");
-  }
-  if (timeFormat == "ms" || timeFormat == "milliseconds"){
-    setTimeout(notify,time);
-    msg.channel.send("Notifying you in " + time + " milliseconds.");
-  }
-  function notify(reason){
-    msg.reply("You asked to be reminded of " + reason);
-  }
 }
 }
 function capitalizeFirstLetter(string) {
