@@ -553,13 +553,6 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
       }
       var tosend = [];
       var currentdate = new Date();
-      /*var datetime = currentdate.getDate() + "/"
-                + (currentdate.getMonth()+1)  + "/"
-                + currentdate.getFullYear() + " "
-                + currentdate.getHours() + ":"
-                + currentdate.getMinutes() + ":"
-                + currentdate.getSeconds();*/
-      //tosend.push("Weather - " + obj.city.name + "," + obj.city.country + " (" + obj.list[0].dt_txt + ") \nCurrent conditions: " + capitalizeFirstLetter(obj.list[0].weather[0].description) + ", " + Math.round(obj.list[0].main.temp - 273.15) + " °C");
       msg.channel.send({
         "embed": {
           "description": "**Weather for: [" + obj.name + ", " + obj.sys.country + "](https://openweathermap.org/city/" + obj.sys.id + ")**",
@@ -600,7 +593,6 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
           ]
         }
       });
-      //obj.list.forEach((cmd, i) => { tosend.push(`Command: ${cmd.command} Response: ${cmd.response} - Created by: ${cmd.creator}`);});
     });
 },
 'ping': (msg) => {
@@ -689,16 +681,6 @@ client.on('message', msg => {
 					message();
     }
 });
-	/*if (fs.existsSync('./.data/cmds_' + msg.guild.id + '.json')) {
-		fs.readFile("./.data/cmds_" + msg.guild.id + '.json', (err, data) => {
-	  if (err) { console.log ('Error reading custom commands from file: ' + err);
-		customcmds[msg.guild.id].cmds = [];
-	 } else {
-		customcmds[msg.guild.id].cmds = JSON.parse(data);
-		console.log(customcmds[msg.guild.id].cmds);
-	}});
-	}else{
-	customcmds[msg.guild.id].cmds = [];
 }*/}else{
 message();
 }
