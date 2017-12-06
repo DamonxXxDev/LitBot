@@ -20,7 +20,6 @@ let canPlay = {};
 let nowPlaying = [];
 var saleDataArray = {};
 const fs = require('fs');
-//tee global var dispatcher[msg.guild.id] tai queue[msg.guild.id].dispatcher autoplaylistiä varten
 const commands = {
 	'play': (msg) => {
     if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0;
@@ -568,14 +567,6 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
     function send (obj) {
       var tosend = [];
       var currentdate = new Date();
-
-      /*var datetime = currentdate.getDate() + "/"
-                + (currentdate.getMonth()+1)  + "/"
-                + currentdate.getFullYear() + " "
-                + currentdate.getHours() + ":"
-                + currentdate.getMinutes() + ":"
-                + currentdate.getSeconds();*/
-      //tosend.push("Weather - " + obj.city.name + "," + obj.city.country + " (" + obj.list[0].dt_txt + ") \nCurrent conditions: " + capitalizeFirstLetter(obj.list[0].weather[0].description) + ", " + Math.round(obj.list[0].main.temp - 273.15) + " °C");
       msg.channel.send({
         "embed": {
           "description": "**Weather for: [" + obj.name + ", " + obj.sys.country + "](https://openweathermap.org/city/" + obj.sys.id + ")**",
@@ -617,30 +608,10 @@ msg.channel.send("Couldn't add command, because you are not in the Bot Controlle
         }
       });
     }
-      //obj.list.forEach((cmd, i) => { tosend.push(`Command: ${cmd.command} Response: ${cmd.response} - Created by: ${cmd.creator}`);});
 },
 'ping': (msg) => {
   msg.channel.send("Ping?")
   .then(m => m.edit(`Pong! Latency is ${m.createdTimestamp - msg.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`));
-},
-'notify': (msg) => {
-  var args = msg.content.split(' ');
-  args.splice(0,1);
-  var time = args[0].replace(/\D/g,'');
-  var timeFormat = args[0].replace(/[0-9]/g, '');
-  if (timeFormat == "m" || timeFormat == "min" || timeFormat == "minutes"){
-    time *= 60;
-    time *= 1000;
-    setTimeout(notify(args[1]),time);
-    msg.channel.send("Notifying you in " + time + " minutes.");
-  }
-  if (timeFormat == "ms" || timeFormat == "milliseconds"){
-    setTimeout(notify,time);
-    msg.channel.send("Notifying you in " + time + " milliseconds.");
-  }
-  function notify(reason){
-    msg.reply("You asked to be reminded of " + reason);
-  }
 }
 }
 function capitalizeFirstLetter(string) {
@@ -727,17 +698,7 @@ client.on('message', msg => {
 					message();
     }
 });
-	/*if (fs.existsSync('./.data/cmds_' + msg.guild.id + '.json')) {
-		fs.readFile("./.data/cmds_" + msg.guild.id + '.json', (err, data) => {
-	  if (err) { console.log ('Error reading custom commands from file: ' + err);
-		customcmds[msg.guild.id].cmds = [];
-	 } else {
-		customcmds[msg.guild.id].cmds = JSON.parse(data);
-		console.log(customcmds[msg.guild.id].cmds);
-	}});
-	}else{
-	customcmds[msg.guild.id].cmds = [];
-}*/}else{
+}else{
 message();
 }
 function message(){
