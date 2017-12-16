@@ -11,22 +11,21 @@ var opts = {
 };
 let queue = {};
 let customcmds = {};
-let roleids = [];
+let roleids = 0;
 let canPlay = {};
 let nowPlaying = [];
-let canPlayAutoplaylist = true;
+let canPlayAutoplaylist = {};
 const fs = require('fs');
-//korjaa playn ignore autoplaylistiin lisäämisen jälkeen
 function play(song, msg) {
-    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) canPlayAutoplaylist[msg.guild.id] = true;
-    if (canPlayAutoplaylist[msg.guild.id] = false) {
-        canPlayAutoplaylist[msg.guild.id] = true;
+    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true; console.log("sus");}
+    if (canPlayAutoplaylist[msg.guild.id].canPlay == false) {
+        canPlayAutoplaylist[msg.guild.id].canPlay = true;
         return;
     }
     if (song === undefined) {
-        return;
-        queue[msg.guild.id].playing = false;
-        playAutoPlaylist(msg);
+      queue[msg.guild.id].playing = false;
+      playAutoPlaylist(msg);
+      return;
     }
     dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, {audioonly: true}), {passes: tokens.passes});
     var minutes = Math.floor(song.length / 60);
@@ -116,8 +115,8 @@ function play(song, msg) {
             dispatcher.setVolume(Math.max((dispatcher.volume * 50 - (2 * (m.content.split('-').length - 1))) / 50, 0));
             msg.channel.send(`Volume: ${Math.round(dispatcher.volume*50)}%`);
         } else if (m.content.startsWith(tokens.prefix + 'np')) {
-            var minutes = Math.floor(song.length_seconds / 60);
-            var seconds = song.length_seconds - minutes * 60;
+            var minutes = Math.floor(song.length / 60);
+            var seconds = song.length - minutes * 60;
             var finalTime = minutes + ':' + seconds;
             m.channel.send({
                 "embed": {
@@ -161,26 +160,26 @@ function play(song, msg) {
         }
     });
     dispatcher.on('error', (err) => {
-        return msg.channel.send('error: ' + err).then(() => {
+        return msg.channel.send('Error while playing: ' + err).then(() => {
+            console.log(err);
             collector.stop();
-            if (queue[msg.guild.id].loop == true) {
-                var songPush = queue[msg.guild.id].songs.shift();
-                play(songPush, msg);
-                queue[msg.guild.id].songs.push(songPush);
-            } else {
-                play(queue[msg.guild.id].songs.shift(), msg);
-            }
         });
     });
 }
-
+function join(msg){
+  return new Promise((resolve, reject) => {
+      const voiceChannel = msg.member.voiceChannel;
+      if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t connect to your voice channel...');
+      voiceChannel.join().then(connection => resolve(connection)).catch(err => reject(err));
+  })
+}
 function playAutoPlaylist(msg) {
-    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) canPlayAutoplaylist[msg.guild.id] = true;
-    if (canPlayAutoplaylist[msg.guild.id] = false) {
-        canPlayAutoplaylist[msg.guild.id] = true;
+    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true;}
+    if (canPlayAutoplaylist[msg.guild.id].canPlay == false) {
+        canPlayAutoplaylist[msg.guild.id].canPlay = true;
         return;
     }
-    if (!msg.guild.voiceConnection) return commands.join(msg).then(() => playAutoPlaylist(msg));
+    if (!msg.guild.voiceConnection) return join(msg).then(() => playAutoPlaylist(msg));
     fs.stat('./.data/', (err, stat) => {
         if (err == null) {
             fs.stat('./.data/autoPL_' + msg.guild.id + '.json', (err, stat) => {
@@ -201,7 +200,6 @@ function playAutoPlaylist(msg) {
                                 return;
                             }
                             playNumber = getRandomInt(0, queue[msg.guild.id].autoplaylist.length - 1);
-                            console.log("PlayNumber: " + playNumber);
                             yt.getInfo(queue[msg.guild.id].autoplaylist[playNumber].url, (err, info) => {
                                 if (err) {
                                     console.log("Invalid song in Autoplaylist: " + song.url + "in guild: " + msg.guild.name);
@@ -244,101 +242,68 @@ function playAutoPlaylist(msg) {
         }
     });
 }
-
-function getAPL(msg) {
-
+function getAPL(msg){
+  if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
+      fs.stat('./.data/', (err, stat) => {
+          if (err == null) {
+              fs.stat('./.data/autoPL_' + msg.guild.id + '.json', (err, stat) => {
+                  if (err == null) {
+                      fs.readFile('./.data/autoPL_' + msg.guild.id + '.json', (err, data) => {
+                          if (err) {
+                              console.log('Error reading autoplaylist from file: ' + err);
+                          } else {
+                            queue[msg.guild.id].autoplaylist = JSON.parse(data);
+                          }
+                      })
+                  } else if (err.code == 'ENOENT') {
+                      // file does not exist
+                      queue[msg.guild.id].autoplaylist = [];
+                  } else {
+                      console.log('Error reading autoplaylist: ', err);
+                      msg.channel.send('Error reading autoplaylist: ', err);
+                      return;
+                  }
+              });
+          } else if (err.code == 'ENOENT') {
+              // .data does not exist
+              fs.mkdirSync('./.data/');
+              queue[msg.guild.id].autoplaylist = [];
+          } else {
+              console.log('Error checking if ./.data/ exists: ', err);
+              msg.channel.send('Error checking if ./.data/ exists: ', err);
+              return;
+          }
+      });
 }
 const commands = {
-    'sus': (msg) => {
-
-    },
-  //TODO korjaa /
-  //array not defined before autoplaylist.push
-  //define msg.guild.id as a variable here
+  //TODO autoplaylistremove, check permissions every command, same guild files in 1 file, fix unexpected end of json input
     'autoplaylist': (msg) => {
-      if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
-      var guildid = msg.guild.id;
-          fs.stat('./.data/', (err, stat) => {
-              if (err == null) {
-                  fs.stat('./.data/autoPL_' + guildid + '.json', (err, stat) => {
-                      if (err == null) {
-                          fs.readFile('./.data/autoPL_' + guildid + '.json', (err, data) => {
-                              if (err) {
-                                  console.log('Error reading autoplaylist from file: ' + err);
-                              } else {
-                                  queue[msg.guild.id].autoplaylist = JSON.parse(data);
-                              }
-                          })
-                      } else if (err.code == 'ENOENT') {
-                          // file does not exist
-                          queue[guildid].autoplaylist = [];
-                      } else {
-                          console.log('Error reading autoplaylist: ', err);
-                          msg.channel.send('Error reading autoplaylist: ', err);
-                          return;
-                      }
-                  });
-              } else if (err.code == 'ENOENT') {
-                  // .data does not exist
-                  fs.mkdirSync('./.data/');
-                  queue[guildid].autoplaylist = [];
-              } else {
-                  console.log('Error checking if ./.data/ exists: ', err);
-                  msg.channel.send('Error checking if ./.data/ exists: ', err);
-                  return;
-              }
+      next();
+      function next(){
+      getAPL(msg);
+      if (queue[msg.guild.id].autoplaylist == undefined){
+        setTimeout(next,0005);
+        return;
+      }
+      if (!queue == {}) {
+          msg.channel.send("No songs in autoplaylist.");
+      } else {
+          let tosend = [];
+          var songs = "songs";
+          if (queue[msg.guild.id].autoplaylist.length == 1) songs = "song";
+          queue[msg.guild.id].autoplaylist.forEach((song, i) => {
+              tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}`);
           });
-          /*queue[msg.guild.id].autoplaylist.push({
-              sus: sus
-          });
-          queue[msg.guild.id].autoplaylist.pop();*/
-        if (!queue == {}) {
-            console.log("json: " + JSON.stringify(queue[guildid].autoplaylist));
-            msg.channel.send("No songs in autoplaylist.");
-        } else {
-            console.log("json: " + JSON.stringify(queue[guildid].autoplaylist));
-            let tosend = [];
-            var songs = "songs";
-            if (queue[guildid].autoplaylist.length == 1) songs = "song";
-            queue[guildid].autoplaylist.forEach((song, i) => {
-                tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}`);
-            });
-            msg.channel.send(`__**${msg.guild.name}'s Autoplaylist:**__ Currently **${tosend.length}** ${songs} in autoplaylist \n\`\`\`${tosend.join('\n')}\`\`\``, {split: true});
-        }
+          msg.channel.send(`__**${msg.guild.name}'s Autoplaylist:**__ Currently **${tosend.length}** ${songs} in autoplaylist \n\`\`\`${tosend.join('\n')}\`\`\``, {split: true});
+      }
+    }
+    },
+    'autoplaylistremove': (msg) => {
     },
     'autoplaylistadd': (msg) => {
         let url = msg.content.split(' ')[1];
         if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}autoplaylistadd`);
-        if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
-            fs.stat('./.data/', (err, stat) => {
-                if (err == null) {
-                    fs.stat('./.data/autoPL_' + msg.guild.id + '.json', (err, stat) => {
-                        if (err == null) {
-                            fs.readFile('./.data/autoPL_' + msg.guild.id + '.json', (err, data) => {
-                                if (err) {
-                                    console.log('Error reading autoplaylist from file: ' + err);
-                                } else {
-                                    queue[msg.guild.id].autoplaylist = JSON.parse(data);
-                                }
-                            })
-                        } else if (err.code == 'ENOENT') {
-                            // file does not exist
-                            queue[msg.guild.id].autoplaylist = [];
-                        } else {
-                            console.log('Error reading autoplaylist: ', err);
-                            msg.channel.send('Error reading autoplaylist: ', err);
-                        }
-                    });
-                } else if (err.code == 'ENOENT') {
-                    // .data does not exist
-                    fs.mkdirSync('./.data/');
-                    commands.autoplaylistadd(msg);
-                } else {
-                    console.log('Error checking if ./.data/ exists: ', err);
-                    msg.channel.send('Error checking if ./.data/ exists: ', err);
-                }
-            });
-
+        getAPL(msg);
         if (urlchk.isWebUri(url)) {
             yt.getInfo(url, (err, info) => {
                 if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
@@ -398,8 +363,8 @@ const commands = {
                 });
             });
         } else {
-            if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0;
-            if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send('Someone is choosing a song to play on this channel. Please wait 20 seconds and try again.');
+            if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = "undefined";
+            if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send(reason);
 
             function isNumeric(n) {
                 return !isNaN(parseFloat(n)) && isFinite(n);
@@ -422,6 +387,7 @@ const commands = {
                     collector.stop();
                 }, 20000);
                 canPlay[msg.channel.id].canPlay = false;
+                canPlay[msg.channel.id].reason = "Someone is already choosing a song on thic channel.";
                 canPlay[msg.channel.id].id = msg.author.id;
                 collector.on('collect', m => {
                     if (!m.author.id == msg.author.id) return;
@@ -502,10 +468,10 @@ const commands = {
         }
     },
     'play': (msg) => {
-        if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0;
-        if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send('Someone is choosing a song to play on this channel. Please wait 20 seconds and try again.');
+        if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = "undefined";
+        if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send(reason);
         if (canPlay[msg.channel.id].canPlay == false) return;
-        if (!msg.guild.voiceConnection) return commands.join(msg).then(() => commands.play(msg));
+        if (!msg.guild.voiceConnection) return join(msg).then(() => commands.play(msg));
         if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
         let url = msg.content.split(' ')[1];
         if (urlchk.isWebUri(url)) {
@@ -591,6 +557,7 @@ const commands = {
                     collector.stop();
                 }, 20000);
                 canPlay[msg.channel.id].canPlay = false;
+                canPlay[msg.channel.id].reason = "Someone is already choosing a song on thic channel.";
                 canPlay[msg.channel.id].id = msg.author.id;
                 collector.on('collect', m => {
                     //console.log(client.voiceConnections);
@@ -696,22 +663,29 @@ const commands = {
 
     },
     'join': (msg) => {
-        return new Promise((resolve, reject) => {
-            const voiceChannel = msg.member.voiceChannel;
-            if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t connect to your voice channel...');
-            voiceChannel.join().then(connection => resolve(connection)).catch(err => reject(err));
-        });
+      join(msg);
+    },
+    'playautoplaylist': (msg) => {
+      msg.channel.send("Playing Autoplaylist..");
+      if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
+      playAutoPlaylist(msg);
     },
     'disconnect': (msg) => {
-        const voiceChannel = msg.member.voiceChannel;
-        if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t disconnect from your voice channel...');
-        queue[msg.guild.id].songs = [];
-        queue[msg.guild.id].playing = false;
-        voiceChannel.leave();
-        canPlayAutoplaylist[msg.guild.id] = false;
-        setTimeout(function() {
-            canPlayAutoplaylist[msg.guild.id] = true
-        }, 0200);
+      for (var i = 0; i < roleids.length; i++) {
+          if (roleids[i].guildid == msg.guild.id) {
+              if (msg.member.roles.has(roleids[i].roleid)) {
+                const voiceChannel = msg.member.voiceChannel;
+                if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t disconnect from your voice channel...');
+                if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
+                canPlayAutoplaylist[msg.guild.id].canPlay = false;
+                queue[msg.guild.id].songs = [];
+                queue[msg.guild.id].playing = false;
+                voiceChannel.leave();
+              }else{
+                msg.channel.send("Could not disconnect, because you aren't in the LitBot Controller role.")
+              }
+            }
+          }
     },
     'queue': (msg) => {
         if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
@@ -831,55 +805,126 @@ const commands = {
         }
     }
 };
+function getRoleIds(){
+  fs.stat('./.data/', (err, stat) => {
+      if (err == null) {
+          fs.stat('./.data/roleids.json', (err, stat) => {
+              if (err == null) {
+                  var rf = fs.readFile("./.data/roleids.json", (err, data) => {
+                      if (err) {
+                          console.log('Error reading roleids from file: ' + err);
+                      } else {
+                          roleids = JSON.parse(data);
+                      }
+                  })
+              } else if (err.code == 'ENOENT') {
+                  // file does not exist
+              } else {
+                  console.log('Error reading roleids file: ', err.code);
+              }
+          });
+      } else if (err.code == 'ENOENT') {
+          // file does not exist
+          fs.mkdirSync('./.data/');
+      } else {
+          console.log('Error checking if ./.data/ exists: ', err.code);
+      }
+  });
+}
+
+function checkRoleIds(){
+  var startts = new Date().getTime();
+  getRoleIds();
+  var tried = 0;
+  setTimeout(function next(){
+  tried = tried + 1;
+  if (roleids == undefined || roleids == null || roleids == 0 || roleids == "" && !roleids == "[]"){
+    if (tried > 30){
+      console.error("Couldn't get roleids from file.");
+      return;
+    }
+    setTimeout(next, 0010);
+    return;
+  }
+  var guilds = client.guilds;
+  for (var i = 0; i < roleids.length; i++) {
+      if (!guilds.findKey("id", roleids[i].guildid)) {
+        console.log("Removed guild " + roleids[i].guildid + " from roleids file.");
+        roleids.splice(i, 1);
+        fs.writeFile("./.data/roleids.json", JSON.stringify(roleids), "utf8", (err) => {
+            if (err) console.log('Error saving admin role to file: ' + err);
+        });
+      }
+    }
+  var guildArray = guilds.array();
+  for (var i = 0; i < guildArray.length; i++){
+    console.log(roleids);
+    function check(id) {
+    return id.guildid == guildArray[i].id;
+    }
+    if (roleids.find(check) == undefined){
+      if (guildArray[i].roles.find("name", "LitBot Controller")){
+        writeRolesToFile(guildArray[i].roles.find("name", "LitBot Controller"));
+        console.log("Wrote roleid for guild " + guildArray[i].name + " to file.");
+        guildArray[i].channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+      }else{
+        console.log("Added to guild: " + guildArray[i].name);
+        guildArray[i].channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+        guildArray[i].createRole({
+                name: "LitBot Controller",
+                color: "BLUE"
+            })
+            .catch(function(reason){
+            console.log("Removed from guild: " + guild.name + " because the bot didn't have the Manage Roles permission.");
+            guildArray[i].channels.first().send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
+            .then(function(){
+            guildArray[i].leave();
+            });
+            })
+            .then(role => writeRolesToFile(role));
+      }
+    }
+  }
+  var endts = new Date().getTime();
+  var took = endts - startts;
+  console.log("Took " + took + "ms");
+}, 0005);
+}
 client.on('ready', () => {
     console.log('ready!');
-    fs.stat('./.data/', (err, stat) => {
-        if (err == null) {
-            fs.stat('./.data/roleids.json', (err, stat) => {
-                if (err == null) {
-                    fs.readFile("./.data/roleids.json", (err, data) => {
-                        if (err) {
-                            console.log('Error reading roleids from file: ' + err);
-                        } else {
-                            roleids = JSON.parse(data);
-                        }
-                    })
-                } else if (err.code == 'ENOENT') {
-                    // file does not exist
-                } else {
-                    console.log('Error reading roleids file: ', err.code);
-                }
-            });
-        } else if (err.code == 'ENOENT') {
-            // file does not exist
-            fs.mkdirSync('./.data/');
-        } else {
-            console.log('Error checking if ./.data/ exists: ', err.code);
-        }
-    });
+    getRoleIds();
+    checkRoleIds();
 });
 
 client.on('guildCreate', function(guild) {
-    console.log(defaultChannel);
-    guild.channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the Bot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+    console.log('Bot added to guild ' + guild.name);
+    guild.channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
     guild.createRole({
             name: "LitBot Controller",
             color: "BLUE"
         })
-        .then(role => writeRolesToFile(role))
-        .catch(console.error);
-
-    function writeRolesToFile(role) {
-        roleids.push({
-            guildid: guild.id,
-            roleid: role.id
-        })
-        console.log('Bot added to guild ' + guild.name);
-        fs.writeFile("./.data/roleids.json", JSON.stringify(roleids), "utf8", (err) => {
-            if (err) console.log('Error saving admin role to file: ' + err);
+        .catch(function(reason){
+        console.log("Removed from guild: " + guild.name + " because the bot didn't have the Manage Roles permission.");
+        guild.channels.first().send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
+        .then(function(){
+        guild.leave();
         });
-    }
+        })
+        .then(role => writeRolesToFile(role));
 });
+function writeRolesToFile(role) {
+  if (role){
+    getRoleIds();
+    roleids.push({
+      name: role.guild.name,
+      guildid: role.guild.id,
+      roleid: role.id
+    });
+    fs.writeFile("./.data/roleids.json", JSON.stringify(roleids, null, '\t'), "utf8", (err) => {
+    if (err) console.log('Error saving admin role to file: ' + err);
+});
+}
+}
 client.on('guildDelete', function(guild) {
     console.log('Removed from guild: ' + guild.name);
     for (var i = 0; i < roleids.length; i++) {
@@ -890,6 +935,16 @@ client.on('guildDelete', function(guild) {
             });
         }
     }
+});
+client.on('roleDelete', function(role) {
+  len = roleids.length;
+  for (var i = 0; i < len; i++) {
+      if (roleids[i].roleid === role.id) {
+        role.guild.channels.first().send("LitBot controller role deleted. Leaving guild. Reinvite with the permission Manage Roles, if you want to get the bot back to the guild.");
+        role.guild.leave();
+        return;
+      }
+  }
 });
 client.on('message', msg => {
     if (msg.channel.type == "dm" || msg.channel.type == "group") return;
