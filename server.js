@@ -276,13 +276,22 @@ function getAPL(msg){
       });
 }
 const commands = {
-  //TODO autoplaylistremove, check permissions every command, same guild files in 1 file, fix unexpected end of json input
+  //TODO autoplaylistremove, check permissions every command, same guild files in 1 file
     'autoplaylist': (msg) => {
+      var times = 0;
       next();
+      times = times + 1;
       function next(){
       getAPL(msg);
       if (queue[msg.guild.id].autoplaylist == undefined){
-        setTimeout(next,0005);
+        if (times > 30){
+          //if getting autoplaylist fails over 30 times return
+          //timeout because getAPL function is async
+          msg.channel.send("Error getting autoplaylist. Try again later.");
+          console.log("Error getting autoplaylist.");
+          return;
+        }
+        setTimeout(next,0010);
         return;
       }
       if (!queue == {}) {
@@ -292,24 +301,119 @@ const commands = {
           var songs = "songs";
           if (queue[msg.guild.id].autoplaylist.length == 1) songs = "song";
           queue[msg.guild.id].autoplaylist.forEach((song, i) => {
-              tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}`);
+              tosend.push(`${i+1}. ${song.title} \n   Requested by: ${song.requester} \n   URL: ${song.url}`);
           });
           msg.channel.send(`__**${msg.guild.name}'s Autoplaylist:**__ Currently **${tosend.length}** ${songs} in autoplaylist \n\`\`\`${tosend.join('\n')}\`\`\``, {split: true});
       }
     }
     },
     'autoplaylistremove': (msg) => {
+      //check if user has Bot Controller role
+      for (var i = 0; i < roleids.length; i++) {
+          if (roleids[i].guildid == msg.guild.id) {
+              if (msg.member.roles.has(roleids[i].roleid)) {
+                next();
+                function next(){
+                  //read autoplaylist file
+                  getAPL(msg);
+                  var times = 0;
+                  var times = times + 1;
+                  if (queue[msg.guild.id].autoplaylist == undefined){
+                    if (times > 30) {
+                    console.log("Couldn't get autoplaylist for guild: " + msg.guild.name);
+                    msg.channel.send("Error getting autoplaylist. Try again later.");
+                    }
+                    setTimeout(next,0005);
+                    return;
+                  }
+                  let url = msg.content.split(' ')[1];
+                  if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}autoplaylistremove`);
+                  if (urlchk.isWebUri(url)) {
+                      yt.getInfo(url, (err, info) => {
+                          if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
+                          let obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() === url.toLowerCase());
+                          if(obj){
+                          requester = msg.author.username + "#" + msg.author.discriminator;
+                          queue[msg.guild.id].autoplaylist.splice(queue[msg.guild.id].autoplaylist.findIndex(o => o.url.toLowerCase() === url.toLowerCase()),1);
+                          //convert time into minutes and seconds
+                          var minutes = Math.floor(info.length_seconds / 60);
+                          var seconds = info.length_seconds - minutes * 60;
+                          var finalTime = minutes + ':' + seconds;
+                          //get thumbnail url for embed
+                          var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
+                          //send embed message
+                          msg.channel.send({
+                              "embed": {
+                                  "description": "**Removed from autoplaylist: [" + info.title + "](" + url + ")**",
+                                  "color": 123433,
+                                  "thumbnail": {
+                                      "url": thumbUrl
+                                  },
+                                  "author": {
+                                      "name": msg.author.username,
+                                      "icon_url": msg.author.avatarURL
+                                  },
+                                  "fields": [{
+                                          "name": "Channel",
+                                          "value": info.title,
+                                          "inline": true
+                                      },
+                                      {
+                                          "name": "Duration",
+                                          "value": finalTime,
+                                          "inline": true
+                                      },
+                                      {
+                                          "name": "Songs in autoplaylist",
+                                          "value": queue[msg.guild.id].autoplaylist.length,
+                                          "inline": true
+                                      }
+                                  ]
+                              }
+                          });
+                          fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
+                              if (err) {
+                                  console.log("Error " + err + " saving autoplaylist to file in guild: " + m.guild.name);
+                                  msg.channel.send("Error " + err + " saving autoplaylist to file.");
+                                  return;
+                              } else {
+                              }
+                          });
+                        }
+                      });
+                  }else{
+                    msg.channel.send("Removing by name is not yet supported. Please send the link to the video. You can get all songs in the autoplaylist with the command " + tokens.prefix + "autoplaylist.");
+                  }
+                }
+              }else{
+                msg.channel.send("Could not remove from autoplaylist, because you are not in the LitBot controller role.");
+              }
+            }
+          }
+    },
+    'aplremove': (msg) => {
+      commands.autoplaylistremove(msg);
+    },
+    'apladd': (msg) => {
+      commands.autoplaylistadd(msg);
+    },
+    'apl': (msg) => {
+      commands.autoplaylist(msg);
     },
     'autoplaylistadd': (msg) => {
+      for (var i = 0; i < roleids.length; i++) {}
+          if (roleids[i].guildid == msg.guild.id) {}
+              if (msg.member.roles.has(roleids[i].roleid)) {}
         let url = msg.content.split(' ')[1];
         if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}autoplaylistadd`);
         getAPL(msg);
         if (urlchk.isWebUri(url)) {
             yt.getInfo(url, (err, info) => {
                 if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
-                let obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() === url.toLowerCase());
+                var obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() === url.toLowerCase());
                 if (obj) return msg.channel.send("This song is already on the Autoplaylist.");
                 requester = msg.author.username + "#" + msg.author.discriminator;
+                //push to autoplaylist array
                 queue[msg.guild.id].autoplaylist.push({
                     url: url,
                     title: info.title,
@@ -319,8 +423,8 @@ const commands = {
                     length: info.length_seconds,
                     author: info.author.name
                 });
-                console.log(JSON.stringify(queue[msg.guild.id].autoplaylist));
-                fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist), (err) => {
+                //save autoplaylist array to file
+                fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
                     if (err) {
                         console.log("Error " + err + " saving autoplaylist to file in guild: " + m.guild.name);
                         msg.channel.send("Error " + err + " saving autoplaylist to file.");
@@ -414,7 +518,7 @@ const commands = {
                                 length: info.length_seconds,
                                 author: info.author.name
                             });
-                            fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist), (err) => {
+                            fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
                                 if (err) {
                                     console.log("Error " + err + " saving autoplaylist to file in guild: " + m.guild.name);
                                     m.channel.send("Error " + err + " saving autoplaylist to file.");
@@ -466,6 +570,11 @@ const commands = {
                 });
             });
         }
+          }else{
+        msg.channel.send("Could not remove from autoplaylist, because you aren't in the LitBot controller role.");
+        }
+      }
+    }
     },
     'play': (msg) => {
         if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = "undefined";
@@ -760,7 +869,7 @@ const commands = {
                                 creator: msg.author.username + '#' + msg.author.discriminator
                             });
                             msg.channel.send('Added command: **' + args[1] + '** with response: **' + args[3] + '** by: **' + msg.author.username + '#' + msg.author.discriminator + '**');
-                            fs.writeFile("./.data/cmds_" + msg.guild.id + '.json', JSON.stringify(customcmds[msg.guild.id].cmds), "utf8", (err) => {
+                            fs.writeFile("./.data/cmds_" + msg.guild.id + '.json', JSON.stringify(customcmds[msg.guild.id].cmds, null, '\t'), "utf8", (err) => {
                                 if (err) console.log('Error saving command to file: ' + err);
                             });
                             collector.stop();
@@ -792,7 +901,7 @@ const commands = {
                         if (customcmds[msg.guild.id].cmds[i].command == splitcommand) {
                             msg.channel.send('Removed command: **' + customcmds[msg.guild.id].cmds[i].command + '** with response: **' + customcmds[msg.guild.id].cmds[i].response + '** created by: **' + customcmds[msg.guild.id].cmds[i].creator + '**')
                             customcmds[msg.guild.id].cmds.splice(i, 1);
-                            fs.writeFile("./.data/cmds_" + msg.guild.id + '.json', JSON.stringify(customcmds[msg.guild.id].cmds), "utf8", (err) => {
+                            fs.writeFile("./.data/cmds_" + msg.guild.id + '.json', JSON.stringify(customcmds[msg.guild.id].cmds, null, '\t'), "utf8", (err) => {
                                 if (err) console.log('Error saving commands to file: ' + err);
                             });
                             break;
@@ -833,7 +942,7 @@ function getRoleIds(){
 }
 
 function checkRoleIds(){
-  var startts = new Date().getTime();
+  //var startts = new Date().getTime();
   getRoleIds();
   var tried = 0;
   setTimeout(function next(){
@@ -851,14 +960,13 @@ function checkRoleIds(){
       if (!guilds.findKey("id", roleids[i].guildid)) {
         console.log("Removed guild " + roleids[i].guildid + " from roleids file.");
         roleids.splice(i, 1);
-        fs.writeFile("./.data/roleids.json", JSON.stringify(roleids), "utf8", (err) => {
+        fs.writeFile("./.data/roleids.json", JSON.stringify(roleids, null, '\t'), "utf8", (err) => {
             if (err) console.log('Error saving admin role to file: ' + err);
         });
       }
     }
   var guildArray = guilds.array();
   for (var i = 0; i < guildArray.length; i++){
-    console.log(roleids);
     function check(id) {
     return id.guildid == guildArray[i].id;
     }
@@ -885,9 +993,9 @@ function checkRoleIds(){
       }
     }
   }
-  var endts = new Date().getTime();
+  /*var endts = new Date().getTime();
   var took = endts - startts;
-  console.log("Took " + took + "ms");
+  console.log("Took " + took + "ms");*/
 }, 0005);
 }
 client.on('ready', () => {
@@ -930,7 +1038,7 @@ client.on('guildDelete', function(guild) {
     for (var i = 0; i < roleids.length; i++) {
         if (roleids[i].guildid == guild.id) {
             roleids.splice(i, 1);
-            fs.writeFile("./.data/roleids.json", JSON.stringify(roleids), "utf8", (err) => {
+            fs.writeFile("./.data/roleids.json", JSON.stringify(roleids, null, '\t'), "utf8", (err) => {
                 if (err) console.log('Error saving admin role to file: ' + err);
             });
         }
