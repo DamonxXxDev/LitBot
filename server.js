@@ -281,7 +281,7 @@ function getAPL(msg){
       });
 }
 const commands = {
-  //TODO autoplaylistremove, check permissions every command, same guild files in 1 file
+  //TODO autoplaylistremove, check permissions every command, same guild files in 1 file, autoplaylist in help file, change prefix by guild
     'autoplaylist': (msg) => {
       var times = 0;
       next();
@@ -851,7 +851,7 @@ const commands = {
         }
     },
     'help': (msg) => {
-        let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', 'Bot Controller commands:', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"', tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"', tokens.prefix + "shuffle: Shuffles queue.", tokens.prefix + "loopqueue: Puts queue on loop.", 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."', tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."', 'volume+(+++): "Increases volume by 2%."', 'volume-(---): "Decreases volume by 2%."', '```'];
+        let tosend = ['```xl', tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', tokens.prefix + 'autoplaylist: "Show songs in autoplaylist. "', 'Bot Controller commands:', tokens.prefix + 'autoplaylistadd, apladd: "Add a song to the autoplaylist. Enter search terms or youtube url after this command. "',tokens.prefix + 'autoplaylistremove, aplremove: "Remove a song from autoplaylist. Enter URL after this command. You can see the URLs of the songs in the autoplaylist with ' + tokens.prefix + 'autoplaylist."', tokens.prefix + 'addcommand: "Adds a custom command, example: ' + tokens.prefix + 'addcommand (command here) (response here)"', tokens.prefix + 'removecommand: "Removes a custom command, example: ' + tokens.prefix + '(command)"', tokens.prefix + 'shuffle: "Shuffles queue."', tokens.prefix + 'loopqueue: "Puts queue on loop."', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."', tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."', 'volume+(+++): "Increases volume by 2%."', 'volume-(---): "Decreases volume by 2%."', '```'];
         msg.channel.send(tosend.join('\n'));
     },
     /*'reboot': (msg) => {
@@ -871,9 +871,8 @@ const commands = {
                     msg.channel.send('Are you sure you want to add this command: **' + command + '** with response: **' + response + '**. Reply yes/no.');
                     let collector = msg.channel.createCollector(m => m);
                     collector.on('collect', m => {
-                        console.log(m.content + ' ' + m.author.id + ' ' + msg.author.id);
                         if (m.content == 'yes' && m.author.id == msg.author.id) {
-                            console.log('Added command: **' + command + '** with response: **' + response + '** by: **' + msg.author.username + '#' + msg.author.discriminator + '** in guild: ' + msg.guild.name);
+                            console.log('Added command: ' + command + ' with response: ' + response + ' by: ' + msg.author.username + '#' + msg.author.discriminator + ' in guild: ' + msg.guild.name);
                             customcmds[msg.guild.id].cmds.push({
                                 command: command,
                                 response: response,
@@ -1293,6 +1292,7 @@ client.on('message', msg => {
     }
 
     function message() {
+        if (msg.author.id === client.user.id) return;
         let obj = customcmds[msg.guild.id].cmds.find(o => o.command === msg.content.toLowerCase());
         if (obj) msg.channel.send(obj.response);
         if (!msg.content.startsWith(tokens.prefix)) return;
