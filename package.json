@@ -12,7 +12,7 @@
     "discord.js": "11.2.1",
     "erlpack": "github:hammerandchisel/erlpack",
     "lodash": "^4.17.4",
-    "node-opus": "^0.2.1",
+    "node-opus": "^0.2.7",
     "request": "^2.83.0",
     "sodium": "^2.0.1",
     "uws": "^0.14.5",
