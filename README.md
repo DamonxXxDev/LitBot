@@ -1,5 +1,5 @@
 # LitBot
-Invite the [public bot](https://discordapp.com/oauth2/authorize?client_id=366607751117406208&scope=bot&permissions=305187904) to your server!
+Invite the [public bot](https://discordapp.com/oauth2/authorize?client_id=370613072181854218&scope=bot&permissions=305187904) to your server!
 
 A fork of [OhGodMusicBot](https://github.com/bdistin/OhGodMusicBot) with custom commands, and other features.
 
