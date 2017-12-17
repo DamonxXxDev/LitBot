@@ -1128,7 +1128,10 @@ function getRoleIds(){
                       }
                   })
               } else if (err.code == 'ENOENT') {
-                  // file does not exist
+                fs.writeFile("./.data/roleids.json", "[]", "utf8", (err) => {
+                    if (err) console.log('Error saving admin role to file: ' + err);
+                });
+                getRoleIds();
               } else {
                   console.log('Error reading roleids file: ', err.code);
               }
@@ -1136,6 +1139,7 @@ function getRoleIds(){
       } else if (err.code == 'ENOENT') {
           // file does not exist
           fs.mkdirSync('./.data/');
+          getRoleIds();
       } else {
           console.log('Error checking if ./.data/ exists: ', err.code);
       }
@@ -1148,7 +1152,7 @@ function checkRoleIds(){
   var tried = 0;
   setTimeout(function next(){
   tried = tried + 1;
-  if (roleids == undefined || roleids == null || roleids == 0 || roleids == "" && !roleids == "[]"){
+  if ((roleids == undefined || roleids == null || roleids == 0 || roleids == "") && !JSON.stringify(roleids) == "[]"){
     if (tried > 30){
       console.error("Couldn't get roleids from file.");
       return;
