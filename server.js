@@ -1173,9 +1173,8 @@ function checkRoleIds(){
     }
   var guildArray = guilds.array();
   //check if bot has been added to guild while offline
-  console.log(roleids);
   for (var i = 0; i < guildArray.length; i++){
-    function check(id) {
+    function check(id) {s
     return id.guildid == guildArray[i].id;
     }
     if (roleids.find(check) == undefined){
