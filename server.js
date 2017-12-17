@@ -1150,6 +1150,7 @@ function checkRoleIds(){
   //var startts = new Date().getTime();
   getRoleIds();
   var tried = 0;
+  //timeout because getRoleIds is async
   setTimeout(function next(){
   tried = tried + 1;
   if ((roleids == undefined || roleids == null || roleids == 0 || roleids == "") && !JSON.stringify(roleids) == "[]"){
@@ -1171,6 +1172,8 @@ function checkRoleIds(){
       }
     }
   var guildArray = guilds.array();
+  //check if bot has been added to guild while offline
+  console.log(roleids);
   for (var i = 0; i < guildArray.length; i++){
     function check(id) {
     return id.guildid == guildArray[i].id;
@@ -1179,17 +1182,17 @@ function checkRoleIds(){
       if (guildArray[i].roles.find("name", "LitBot Controller")){
         writeRolesToFile(guildArray[i].roles.find("name", "LitBot Controller"));
         console.log("Wrote roleid for guild " + guildArray[i].name + " to file.");
-        guildArray[i].channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+        guildArray[i].owner.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
       }else{
         console.log("Added to guild: " + guildArray[i].name);
-        guildArray[i].channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+        guildArray[i].owner.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
         guildArray[i].createRole({
                 name: "LitBot Controller",
                 color: "BLUE"
             })
             .catch(function(reason){
             console.log("Removed from guild: " + guild.name + " because the bot didn't have the Manage Roles permission.");
-            guildArray[i].channels.first().send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
+            guildArray[i].owner.send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
             .then(function(){
             guildArray[i].leave();
             });
@@ -1201,7 +1204,7 @@ function checkRoleIds(){
   /*var endts = new Date().getTime();
   var took = endts - startts;
   console.log("Took " + took + "ms");*/
-}, 0005);
+}, 0030);
 }
 client.on('ready', () => {
     console.log('ready!');
@@ -1211,14 +1214,14 @@ client.on('ready', () => {
 
 client.on('guildCreate', function(guild) {
     console.log('Bot added to guild ' + guild.name);
-    guild.channels.first().send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
+    guild.owner.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
     guild.createRole({
             name: "LitBot Controller",
             color: "BLUE"
         })
         .catch(function(reason){
         console.log("Removed from guild: " + guild.name + " because the bot didn't have the Manage Roles permission.");
-        guild.channels.first().send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
+        guild.owner.send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
         .then(function(){
         guild.leave();
         });
@@ -1259,7 +1262,7 @@ client.on('roleDelete', function(role) {
   len = roleids.length;
   for (var i = 0; i < len; i++) {
       if (roleids[i].roleid === role.id) {
-        role.guild.channels.first().send("LitBot controller role deleted. Leaving guild. Reinvite with the permission Manage Roles, if you want to get the bot back to the guild.");
+        role.guild.owner.send("LitBot controller role deleted. Leaving guild. Reinvite with the permission Manage Roles, if you want to get the bot back to the guild.");
         role.guild.leave();
         return;
       }
