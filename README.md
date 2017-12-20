@@ -76,3 +76,9 @@ Shift-RightClick in the folder that you downloaded and select Open command windo
 **Linux**
 
 cd to where you cloned the GitHub repo and type `npm install`. This will take a while.
+
+### Updating
+
+**Windows**'
+Shift-RightClick in the folder that you downloaded and select Open command window here. Then type `git pull` and hit Enter.
+Then type `npm install` and hit Enter to install dependencies.
