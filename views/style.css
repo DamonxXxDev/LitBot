@@ -1,0 +1,113 @@
+body {margin:0;}
+.text {
+  position: absolute;
+  top: 200px;
+  font-family: sans-serif, Arial;
+  color: #ffffff;
+  padding: 12px;
+}
+.textcommands {
+  position: absolute;
+  top: 20px;
+  font-family: sans-serif, Arial;
+  color: #ffffff;
+  padding: 12px;
+  z-index: -1;
+}
+.litlogo {
+position: absolute;
+top: 100px;
+left: 100px;
+}
+
+.topnav {
+  overflow: hidden;
+  background-color: #7289DA;
+}
+
+.topnav a {
+  float: left;
+  display: block;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
+  font-family: sans-serif, Arial;
+}
+.topnav button {
+  float: left;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+.topnav a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+.topnav .icon {
+  display: none;
+}
+
+@media screen and (max-width: 600px) {
+  .topnav a:not(:first-child) {display: none;}
+  .topnav a.icon {
+    float: right;
+    display: block;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .topnav.responsive {position: relative;}
+  .topnav.responsive .icon {
+    position: absolute;
+	z-index: 99999;
+    right: 0;
+    top: 0;
+  }
+  .topnav.responsive a {
+    float: none;
+    display: block;
+	z-index: 999999;
+    text-align: left;
+  }
+}
+.guildImage {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 60px;
+}
+.allGuildImagesContainer {
+  /*position: absolute;
+  /*margin: auto;*/
+  border: 3px solid #73AD21;
+  padding: 10px;
+  display: inline-block;
+  text-align: center;
+  width: 130px;
+  height: 65px;
+  margin: auto;
+}
+.guildImage .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: white;
+    color: black;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -60px;
+}
+
+.guildImage:hover .tooltiptext {
+    visibility: visible;
+}

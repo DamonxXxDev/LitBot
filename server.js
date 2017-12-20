@@ -7,7 +7,6 @@ const client = new Client();
 var search = require('youtube-search');
 var request = require('request');
 var cheerio = require('cheerio');
-
 var opts = {
     maxResults: 5,
     key: tokens.yt_api_key
@@ -21,6 +20,110 @@ let nowPlaying = [];
 var saleDataArray = {};
 let canPlayAutoplaylist = {};
 const fs = require('fs');
+//express
+//express requirements
+var scopes = ['identify', 'email', 'guilds'];
+var express = require('express');
+var app = express();
+var session = require('express-session');
+var passport = require('passport');
+var DiscordStrategy = require('passport-discord').Strategy;
+//var bodyParser = require('body-parser');
+//app.use(bodyParser.json());       // to support JSON-encoded bodies
+/*app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+}));*/
+//app.disable('x-powered-by');
+app.use(express.static('public'));
+app.use(session({
+    secret: 'susmaasdkfh8973456',
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new DiscordStrategy({
+    //this could be set automatically
+    clientID: tokens.d_id,
+    clientSecret: tokens.d_clientsecret,
+    callbackURL: 'http://localhost:3000/callback',
+    scope: scopes
+}, function(accessToken, refreshToken, profile, done) {
+    process.nextTick(function() {
+        return done(null, profile);
+    });
+}));
+function checkAuth(req, res, next) {
+    if (req.isAuthenticated()) return next();
+    res.send('not logged in :(');
+}
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+app.get('/commands', function (req, res) {
+  if(req.user)  {
+  var loggedIn = true;
+  var username = 'Logged in as ' + req.user.username + "#" + req.user.discriminator;
+  if (roleids == 0){
+    getRoleIds();
+  }
+  var times = 0;
+  setTimeout(next, 10);
+  function next(){
+  if (roleids == 0){
+    var times = times + 1;
+    if (times < 30) {
+      res.send("Error getting roleids.");
+      return;
+    }
+    setTimeout(next,18);
+    return;
+  }
+  var guildArray = [];
+  for (var i = 0; i < req.user.guilds.length; i++) {
+    function check(id) {
+    return id.guildid == req.user.guilds[i].id;
+    }
+    if (roleids.find(check)){
+      guildArray.push(req.user.guilds[i]);
+    }
+  }
+  res.render('commands.pug', {
+  guildArrayStr: JSON.stringify(guildArray),
+  username: username,
+  loggedIn: loggedIn
+  });
+  }
+}else{
+  res.send("Not logged in.");
+}
+});
+app.get('/auth', passport.authenticate('discord', { scope: scopes }), function(req, res) {});
+app.get('/callback',
+    passport.authenticate('discord', { failureRedirect: '/failure' }), function(req, res) { res.redirect('/') } // auth success
+);
+app.get('/info', checkAuth, function(req, res) {
+    res.json(req.user);
+});
+app.get('/', function (req, res) {
+  if (req.user){
+  var loggedIn = true;
+  var username = 'Logged in as ' + req.user.username + "#" + req.user.discriminator;
+  //var userinfo = JSON.parse(req.user);
+  }else{
+    var loggedIn = false;
+	  var username = 'Login';
+  }
+  //console.log(userinfo);
+  res.render('root.pug', { username: username, loggedIn : loggedIn });
+});
+app.listen(tokens.port, function () {
+  console.log('App listening on port ' + tokens.port + '!');
+});
+//express
 function play(song, msg) {
     if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true; console.log("sus");}
     if (canPlayAutoplaylist[msg.guild.id].canPlay == false) {
@@ -296,7 +399,7 @@ const commands = {
           console.log("Error getting autoplaylist.");
           return;
         }
-        setTimeout(next,0010);
+        setTimeout(next,10);
         return;
       }
       if (!queue == {}) {
@@ -328,7 +431,7 @@ const commands = {
                     console.log("Couldn't get autoplaylist for guild: " + msg.guild.name);
                     msg.channel.send("Error getting autoplaylist. Try again later.");
                     }
-                    setTimeout(next,0005);
+                    setTimeout(next,5);
                     return;
                   }
                   let url = msg.content.split(' ')[1];

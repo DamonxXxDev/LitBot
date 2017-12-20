@@ -1,0 +1,56 @@
+doctype html
+html
+    head
+    // <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+    style
+      include style.css
+    body(bgcolor='#36393E')
+    #myTopnav.topnav
+      a(href='/') Home
+      a(href='/commands') Commands
+      a(href='/auth')= username 
+      a(href='/logout' style="display:none" id="logout") Log Out
+      a.icon(href='javascript:void(0);', style='font-size:15px;', onclick='myFunction()') ☰
+    //.textcommands
+    //  h2 Commands 
+    div(class='allGuildImagesContainer')
+    
+    script.
+      if (!{loggedIn} == true){
+      document.getElementById('logout').style.display = 'block';
+      }else{
+      document.getElementById('logout').style.display = 'none';
+      }
+      function myFunction() {
+        var x = document.getElementById("myTopnav");
+        if (x.className === "topnav") {
+          x.className += " responsive";
+          } else {
+          x.className = "topnav";
+          }
+        }
+      var guildArray = JSON.parse('!{guildArrayStr}');
+      var imageContainer = document.createElement('div');
+      for(var i = 0; i < guildArray.length; i++)
+      {
+      var btn = document.createElement("input");
+      var guildphotourl = 'https://cdn.discordapp.com/icons/' + guildArray[i].id + '/' + guildArray[i].icon + '.webp';
+      if (guildArray[i].icon == null){
+        guildphotourl = '/img/guild_no_photo.png';
+      }
+      btn.setAttribute("src", guildphotourl);
+      var id = guildArray[i].id;
+      btn.onclick = function () {
+      location.href = '/dashboard/' + id;
+      }
+      btn.type = "image";
+      btn.className = "guildImage";
+      var tooltip = document.createElement('span');
+      tooltip.textContent = guildArray[i].name;
+      tooltip.className = 'tooltiptext';
+      btn.appendChild(tooltip);
+      btn.style.left = 10 + i * 65 +'px';
+      //container.style.top = '600px';
+      var imageContainer = document.getElementsByClassName("allGuildImagesContainer")[0];
+      imageContainer.appendChild(btn);
+      }

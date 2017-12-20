@@ -1,0 +1,35 @@
+doctype html
+html
+  head
+    // <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+    style
+      include style.css
+  body(bgcolor='#36393E')
+    #myTopnav.topnav
+      a(href='/') Home
+      a(href='/commands') Commands
+      a(href='/auth')= username
+      a(href='/logout' style="display:none" id="logout") Log Out
+      a.icon(href='javascript:void(0);', style='font-size:15px;', onclick='myFunction()') ☰
+    .litlogo
+      img#logo(src='/img/lit.png', align='middle', height='100', width='100')
+    .text
+      h2 LitMusicOnly Discord Bot
+    //script(src"//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js")
+    
+    script.
+      if (!{loggedIn} == true){
+      document.getElementById('logout').style.display = 'block';
+      }else{
+      document.getElementById('logout').style.display = 'none';
+      }
+      function myFunction() {
+      var x = document.getElementById("myTopnav"); 
+      if (x.className === "topnav") {
+      x.className += " responsive";
+      } else {
+      x.className = "topnav";
+      }
+      }
+
+	  
