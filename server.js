@@ -1034,7 +1034,8 @@ const commands = {
     var args = msg.content.split(' ');
     args.splice(0,1);
     if (args[0] == undefined){
-    msg.channel.send("Argument city missing");
+    msg.channel.send("Argument city missing.");
+    return;
     }
     var today = new Date();
     var arg0 = args[0].toLowerCase();
