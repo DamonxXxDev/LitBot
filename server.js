@@ -582,7 +582,7 @@ const commands = {
             });
         }
           }else{
-        msg.channel.send("Could not remove from autoplaylist, because you aren't in the LitBot controller role.");
+        msg.channel.send("Could not add to autoplaylist, because you aren't in the LitBot controller role.");
         }
       }
     }
