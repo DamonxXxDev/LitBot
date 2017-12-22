@@ -583,7 +583,7 @@ const commands = {
             });
         }
           }else{
-        msg.channel.send("Could not remove from autoplaylist, because you aren't in the LitBot controller role.");
+        msg.channel.send("Could not add to autoplaylist, because you aren't in the LitBot controller role.");
         }
       }
     }
@@ -1628,7 +1628,11 @@ client.on('roleDelete', function(role) {
   }
 });
 client.on('message', msg => {
-    if (msg.channel.type == "dm" || msg.channel.type == "group") return;
+    if (msg.author.id === client.user.id) return;
+    if (msg.channel.type == "dm" || msg.channel.type == "group") {
+      msg.channel.send("DMs or groups are not yet supported.");
+      return;
+    }
     if (!customcmds.hasOwnProperty(msg.guild.id)) {
         customcmds[msg.guild.id] = {};
         fs.stat('./.data/cmds_' + msg.guild.id + '.json', (err, stat) => {
@@ -1658,7 +1662,6 @@ client.on('message', msg => {
     }
 
     function message() {
-        if (msg.author.id === client.user.id) return;
         let obj = customcmds[msg.guild.id].cmds.find(o => o.command === msg.content.toLowerCase());
         if (obj) msg.channel.send(obj.response);
         if (!msg.content.startsWith(tokens.prefix)) return;
