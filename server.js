@@ -20,6 +20,7 @@ let canPlay = {};
 let nowPlaying = [];
 var saleDataArray = {};
 let canPlayAutoplaylist = {};
+var fortniteApiCooldown = false;
 const fs = require('fs');
 function play(song, msg) {
     if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true; console.log("sus");}
@@ -851,7 +852,7 @@ const commands = {
         }
     },
     'help': (msg) => {
-        let tosend = ['```xl', tokens.prefix + 'weather <city>: "Get weather in city."', tokens.prefix + 'steam sale: "Shows the next Steam sale."' , tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', tokens.prefix + 'autoplaylist: "Show songs in autoplaylist. "', 'Bot Controller commands:', tokens.prefix + 'autoplaylistadd, apladd <song>: "Add a song to the autoplaylist. Enter search terms or youtube url after this command. "',tokens.prefix + 'autoplaylistremove, aplremove <url>: "Remove a song from autoplaylist. Enter URL after this command. You can see the URLs of the songs in the autoplaylist with ' + tokens.prefix + 'autoplaylist."', tokens.prefix + 'addcommand <command> <response>: "Adds a custom command."', tokens.prefix + 'removecommand <command>: "Removes a custom command."', tokens.prefix + 'shuffle: "Shuffles queue."', tokens.prefix + 'loopqueue: "Puts queue on loop."', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."', tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."', 'volume+(+++): "Increases volume by 2%."', 'volume-(---): "Decreases volume by 2%."', '```'];
+        let tosend = ['```xl', tokens.prefix + 'fortnite stats <psn/xbl/pc> <username> <all/solo/duo/squad>: "Get fortnite stats of player in chosen gamemode."', tokens.prefix + 'weather <city>: "Get weather in city."', tokens.prefix + 'steam sale: "Shows the next Steam sale."' , tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', tokens.prefix + 'autoplaylist: "Show songs in autoplaylist. "', 'Bot Controller commands:', tokens.prefix + 'autoplaylistadd, apladd <song>: "Add a song to the autoplaylist. Enter search terms or youtube url after this command. "',tokens.prefix + 'autoplaylistremove, aplremove <url>: "Remove a song from autoplaylist. Enter URL after this command. You can see the URLs of the songs in the autoplaylist with ' + tokens.prefix + 'autoplaylist."', tokens.prefix + 'addcommand <command> <response>: "Adds a custom command."', tokens.prefix + 'removecommand <command>: "Removes a custom command."', tokens.prefix + 'shuffle: "Shuffles queue."', tokens.prefix + 'loopqueue: "Puts queue on loop."', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."', tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."', 'volume+(+++): "Increases volume by 2%."', 'volume-(---): "Decreases volume by 2%."', '```'];
         msg.channel.send(tosend.join('\n'));
     },
     /*'reboot': (msg) => {
@@ -1030,9 +1031,369 @@ const commands = {
           }
     }
   },
+  'fortnite': (msg) => {
+    var args = msg.content.split(' ');
+      if(args[1] == "stats"){
+      if (args[2] === undefined){
+        msg.channel.send('Argument platform missing.');
+        return;
+      }
+      args[2] = args[2].toLowerCase();
+      if (args[2] == "xboxone" || args[2] == "xbox" || args[2] == "xboxlive" || args[2] == "xb"){
+        args[2] = "xbl";
+      }
+      if (args[2] == "ps4" || args[2] == "ps" || args[2] == "playstation"){
+        args[2] = "psn";
+      }
+      if (args[2] !== "pc" && args[2] !== "xbl" && args[2] !== "psn"){
+        msg.channel.send("Invalid platform.");
+        return;
+      }
+      if (args[3] === undefined){
+        msg.channel.send('Argument username missing.');
+        return;
+      }
+      if (args[4] !== "all" && args[4] !== "solo" && args[4] !== "duo" && args[4] !== "squad"){
+        msg.channel.send("Argument gamemode invalid.");
+        return;
+      }
+      if (fortniteApiCooldown == true){
+        msg.channel.send("API on cooldown. Please wait 2 seconds and try again.");
+        return;
+      }
+      var options = {
+        url: "https://api.fortnitetracker.com/v1/profile/" + args[2] + "/" + args[3],
+        headers: {
+          'TRN-Api-Key': tokens.fortnite_api_key
+        }
+        };
+      request(options, function(error, response, body) {
+        if (error) console.log(error);
+        var data = JSON.parse(body);
+        fortniteApiCooldown = true;
+        setTimeout(function(){
+          fortniteApiCooldown = false;
+        },2000);
+        if (data.error){
+          if (data.error = "Player Not Found"){
+            msg.channel.send("Invalid username.");
+            return;
+          }else{
+            msg.channel.send("Error getting data. Try again later.");
+            return;
+          }
+        }
+        //console.log("response: " + response + " body: " + body);
+        //let obj = customcmds[msg.guild.id].cmds.find(o => o.command === msg.content.toLowerCase());
+        var winPercent = data.lifeTimeStats.find(o => o.key === "Wins").value / data.lifeTimeStats.find(o => o.key === "Matches Played").value * 100;
+        winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
+        if (args[4] === "all" || args[4] === "solo" || args[4] === "duo" || args[4] === "squad"){
+
+        }
+        if (args[4] === "all"){
+        msg.channel.send({
+          "embed": {
+            "description": "All Gamemodes Fortnite stats for **" + args[3] + "** on platform **" + data.platformNameLong +"**.",
+            "color": 16073282,
+            /*"thumbnail": {
+              "url": '' //could have fortnite icon here
+            },*/
+            "author": {
+              "name": msg.author.username,
+              "icon_url": msg.author.avatarURL
+            },
+            "footer": {
+              "text": "Source: https://fortnitetracker.com"
+            },
+            "fields": [
+              {
+                "name": "Score",
+                "value": data.lifeTimeStats.find(o => o.key === "Score").value,
+                "inline": true
+              },
+              {
+                "name": "Time Played",
+                "value": data.lifeTimeStats.find(o => o.key === "Time Played").value,
+                "inline": true
+              },
+              {
+                "name": "Wins",
+                "value": data.lifeTimeStats.find(o => o.key === "Wins").value,
+                "inline": true
+              },
+              {
+                "name": "Win%",
+                "value": winPercent + "%",
+                "inline": true
+              },
+              {
+                "name": "Kills/deaths",
+                "value": data.lifeTimeStats.find(o => o.key === "K/d").value,
+                "inline": true
+              },
+              {
+                "name": "Top 25",
+                "value": data.lifeTimeStats.find(o => o.key === "Top 25s").value,
+                "inline": true
+              },
+              {
+                "name": "Top 10",
+                "value": data.lifeTimeStats.find(o => o.key === "Top 10s").value,
+                "inline": true
+              },
+              {
+                "name": "Top 3",
+                "value": data.lifeTimeStats.find(o => o.key === "Top 3s").value,
+                "inline": true
+              }
+            ]
+          }
+        });
+      } else if (args[4] === "solo"){
+        var winPercent = data.stats.p2.top1.valueInt / data.stats.p2.matches.valueInt * 100;
+        winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
+        msg.channel.send({
+          "embed": {
+            "description": "Solo Fortnite stats for **" + args[3] + "** on platform **" + data.platformNameLong +"**.",
+            "color": 16073282,
+            /*"thumbnail": {
+              "url": '' //could have fortnite icon here
+            },*/
+            "author": {
+              "name": msg.author.username,
+              "icon_url": msg.author.avatarURL
+            },
+            "footer": {
+              "text": "Source: https://fortnitetracker.com"
+            },
+            "fields": [
+              {
+                "name": "Score",
+                "value": data.stats.p2.score.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Time Played",
+                "value": data.stats.p2.minutesPlayed.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Wins",
+                "value": data.stats.p2.top1.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Win%",
+                "value": winPercent + "%",
+                "inline": true
+              },
+              {
+                "name": "Kills/deaths",
+                "value": data.stats.p2.kd.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills per minute",
+                "value": data.stats.p2.kpm.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills per match",
+                "value": data.stats.p2.kpg.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills",
+                "value": data.stats.p2.kills.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 25",
+                "value": data.stats.p2.top25.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 10",
+                "value": data.stats.p2.top10.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 3",
+                "value": data.stats.p2.top3.displayValue,
+                "inline": true
+              }
+            ]
+          }
+        });
+      } else if (args[4] === "duo") {
+        var winPercent = data.stats.p10.top1.valueInt / data.stats.p10.matches.valueInt * 100;
+        winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
+        msg.channel.send({
+          "embed": {
+            "description": "Duo Fortnite stats for **" + args[3] + "** on platform **" + data.platformNameLong +"**.",
+            "color": 16073282,
+            /*"thumbnail": {
+              "url": '' //could have fortnite icon here
+            },*/
+            "author": {
+              "name": msg.author.username,
+              "icon_url": msg.author.avatarURL
+            },
+            "footer": {
+              "text": "Source: https://fortnitetracker.com"
+            },
+            "fields": [
+              {
+                "name": "Score",
+                "value": data.stats.p10.score.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Time Played",
+                "value": data.stats.p10.minutesPlayed.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Wins",
+                "value": data.stats.p10.top1.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Win%",
+                "value": winPercent + "%",
+                "inline": true
+              },
+              {
+                "name": "Kills/deaths",
+                "value": data.stats.p10.kd.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills per minute",
+                "value": data.stats.p10.kpm.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills per match",
+                "value": data.stats.p10.kpg.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills",
+                "value": data.stats.p10.kills.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 25",
+                "value": data.stats.p10.top25.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 10",
+                "value": data.stats.p10.top10.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 3",
+                "value": data.stats.p10.top3.displayValue,
+                "inline": true
+              }
+            ]
+          }
+        });
+      } else if (args[4] === "squad") {
+        var winPercent = data.stats.p9.top1.valueInt / data.stats.p9.matches.valueInt * 100;
+        winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
+        msg.channel.send({
+          "embed": {
+            "description": "Squad Fortnite stats for **" + args[3] + "** on platform **" + data.platformNameLong +"**.",
+            "color": 16073282,
+            /*"thumbnail": {
+              "url": '' //could have fortnite icon here
+            },*/
+            "author": {
+              "name": msg.author.username,
+              "icon_url": msg.author.avatarURL
+            },
+            "footer": {
+              "text": "Source: https://fortnitetracker.com"
+            },
+            "fields": [
+              {
+                "name": "Score",
+                "value": data.stats.p9.score.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Time Played",
+                "value": data.stats.p9.minutesPlayed.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Wins",
+                "value": data.stats.p9.top1.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Win%",
+                "value": winPercent + "%",
+                "inline": true
+              },
+              {
+                "name": "Kills/deaths",
+                "value": data.stats.p9.kd.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills per minute",
+                "value": data.stats.p9.kpm.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills per match",
+                "value": data.stats.p9.kpg.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Kills",
+                "value": data.stats.p9.kills.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 25",
+                "value": data.stats.p9.top25.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 10",
+                "value": data.stats.p9.top10.displayValue,
+                "inline": true
+              },
+              {
+                "name": "Top 3",
+                "value": data.stats.p9.top3.displayValue,
+                "inline": true
+              }
+            ]
+          }
+        });
+      } else if (args[4] === undefined) {
+        msg.channel.send("Argument 4: gamemode missing.");
+        return;
+      } else {
+        msg.channel.send("Invalid gamemode.");
+        return;
+      }
+      });
+      }
+  },
   'weather': (msg) => {
     var args = msg.content.split(' ');
     args.splice(0,1);
+    if (args[0] == undefined){
+    msg.channel.send("Argument city missing.");
+    return;
+    }
     var today = new Date();
     var arg0 = args[0].toLowerCase();
     if (!weatherdata.hasOwnProperty(arg0)){
@@ -1066,7 +1427,6 @@ const commands = {
       send(weatherdata[arg0].data);
     }
       function send (obj) {
-        var tosend = [];
         var currentdate = new Date();
         msg.channel.send({
           "embed": {
