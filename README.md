@@ -1,4 +1,6 @@
 # LitBot
+Invite the [public bot](https://discordapp.com/oauth2/authorize?client_id=370613072181854218&scope=bot&permissions=305187904) to your server!
+
 A fork of [OhGodMusicBot](https://github.com/bdistin/OhGodMusicBot) with custom commands, and other features.
 
 ## Installation (Windows)
@@ -74,3 +76,9 @@ Shift-RightClick in the folder that you downloaded and select Open command windo
 **Linux**
 
 cd to where you cloned the GitHub repo and type `npm install`. This will take a while.
+
+### Updating
+
+**Windows**'
+Shift-RightClick in the folder that you downloaded and select Open command window here. Then type `git pull` and hit Enter.
+Then type `npm install` and hit Enter to install dependencies.
