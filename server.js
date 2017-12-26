@@ -7,7 +7,6 @@ const client = new Client();
 var search = require('youtube-search');
 var request = require('request');
 var cheerio = require('cheerio');
-
 var opts = {
     maxResults: 5,
     key: tokens.yt_api_key
@@ -33,7 +32,31 @@ function play(song, msg) {
       playAutoPlaylist(msg);
       return;
     }
-    dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, {audioonly: true}), {passes: tokens.passes});
+    if(tokens.cache_songs == true){
+    console.log("cache");
+    fs.stat('./.data/downloadedSongs/' + song.video_id + '.' + song.format, (err, stat) => {
+    if (err == null) {
+      dispatcher = msg.guild.voiceConnection.playFile('./.data/downloadedSongs/' + song.video_id + '.' + song.format);
+      afterDownload();
+    } else if (err.code == 'ENOENT') {
+        // file does not exist
+        var writeStream = fs.createWriteStream('./.data/downloadedSongs/' + song.video_id + '.' + song.format);
+        var ytdl = yt(song.url, { filter: (format) => format.container === song.format }).pipe(writeStream);
+        writeStream.on('close', function() {
+          dispatcher = msg.guild.voiceConnection.playFile('./.data/downloadedSongs/' + song.video_id + '.' + song.format, { passes : tokens.passes });
+          afterDownload();
+        });
+    } else {
+        console.log("Error reading song file.");
+        msg.channel.send("Error playing. Try again later.");
+        return;
+    }
+});
+}else{
+dispatcher = msg.guild.voiceConnection.playStream(yt(song.url, { audioonly: true, highWaterMark: 65536 }), { passes : tokens.passes });
+afterDownload();
+}
+function afterDownload(){
     var minutes = Math.floor(song.length / 60);
     var seconds = song.length - minutes * 60;
     var finalTime = minutes + ':' + seconds;
@@ -147,7 +170,7 @@ function play(song, msg) {
                         },
                         {
                             "name": "Playtime",
-                            "value": `${Math.floor(dispatcher.time / 60000)}:${Math.floor((dispatcher.time % 60000)/1000) <10 ? '0'+Math.floor((dispatcher.time % 60000)/1000) : Math.floor((dispatcher.time % 60000)/1000)}/` + finalTime,
+                            "value": `${Math.floor(dispatcher.time / 60000)}:${Math.floor((dispatcher.time % 60000)/1000) <10 ? '0' + Math.floor((dispatcher.time % 60000)/1000) : Math.floor((dispatcher.time % 60000)/1000)}/` + finalTime,
                             "inline": true
                         }
                     ]
@@ -171,6 +194,7 @@ function play(song, msg) {
             collector.stop();
         });
     });
+  }
 }
 function join(msg){
   return new Promise((resolve, reject) => {
@@ -211,6 +235,12 @@ function playAutoPlaylist(msg) {
                                     console.log("Invalid song in Autoplaylist: " + song.url + "in guild: " + msg.guild.name);
                                     msg.channel.send("Invalid song in Autoplaylist: " + song.url);
                                 }
+                                var format = yt.chooseFormat(info.formats, { filter: "audioonly", quality: "highest" });
+                                if (!format) {
+                                  msg.channel.send("Could not download. Try again later.");
+                                  console.log("Error downloading. Could not get format.");
+                                  return;
+                                }
                                 queue[msg.guild.id].songs.push({
                                     url: queue[msg.guild.id].autoplaylist[playNumber].url,
                                     title: info.title,
@@ -219,7 +249,8 @@ function playAutoPlaylist(msg) {
                                     avatarURL: queue[msg.guild.id].autoplaylist[playNumber].avatarURL,
                                     length: info.length_seconds,
                                     author: info.author.name,
-                                    type: "Autoplaylist"
+                                    type: "Autoplaylist",
+                                    format: format.container
                                 });
                                 play(queue[msg.guild.id].songs.shift(), msg);
                                 queue[msg.guild.id].playing = true;
@@ -516,15 +547,22 @@ const commands = {
                               msg.channel.send("This song is already on the Autoplaylist.")
                               return;
                             }
+                            var format = yt.chooseFormat(info.formats, { filter: "audioonly", quality: "highest" });
+                            if (!format) {
+                              msg.channel.send("Could not download. Try again later.");
+                              console.log("Error downloading. Could not get format.");
+                              return;
+                            }
                             requester = m.author.username + "#" + m.author.discriminator;
                             queue[msg.guild.id].autoplaylist.push({
                                 url: url,
                                 title: info.title,
                                 requester: requester,
                                 video_id: info.video_id,
-                                avatarURL: m.author.avatarURL,
+                                avatarURL: msg.author.avatarURL,
                                 length: info.length_seconds,
-                                author: info.author.name
+                                author: info.author.name,
+                                format: format
                             });
                             fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
                                 if (err) {
@@ -600,6 +638,12 @@ const commands = {
             yt.getInfo(url, (err, info) => {
                 if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
                 requester = msg.author.username + "#" + msg.author.discriminator;
+                var format = yt.chooseFormat(info.formats, { filter: "audioonly", quality: "highest" });
+                if (!format) {
+                  msg.channel.send("Could not download. Try again later.");
+                  console.log("Error downloading. Could not get format.");
+                  return;
+                }
                 queue[msg.guild.id].songs.push({
                     url: url,
                     title: info.title,
@@ -608,7 +652,8 @@ const commands = {
                     avatarURL: msg.author.avatarURL,
                     length: info.length_seconds,
                     author: info.author.name,
-                    type: "Queue"
+                    type: "Queue",
+                    format: format.container
                 });
                 if (queue[msg.guild.id].playing == true) {
                     var minutes = Math.floor(info.length_seconds / 60);
@@ -678,7 +723,7 @@ const commands = {
                     collector.stop();
                 }, 20000);
                 canPlay[msg.channel.id].canPlay = false;
-                canPlay[msg.channel.id].reason = "Someone is already choosing a song on thic channel.";
+                canPlay[msg.channel.id].reason = "Someone is already choosing a song on this channel.";
                 canPlay[msg.channel.id].id = msg.author.id;
                 collector.on('collect', m => {
                     //console.log(client.voiceConnections);
@@ -708,6 +753,12 @@ const commands = {
                                 return;
                             }
                             requester = msg.author.username + "#" + msg.author.discriminator;
+                            var format = yt.chooseFormat(info.formats, { filter: "audioonly", quality: "highest" });
+                            if (!format) {
+                              msg.channel.send("Could not download. Try again later.");
+                              console.log("Error downloading. Could not get format.");
+                              return;
+                            }
                             queue[msg.guild.id].songs.push({
                                 url: url,
                                 title: info.title,
@@ -716,7 +767,8 @@ const commands = {
                                 avatarURL: msg.author.avatarURL,
                                 length: info.length_seconds,
                                 author: info.author.name,
-                                type: "Queue"
+                                type: "Queue",
+                                format: format.container
                             });
                             if (queue[msg.guild.id].playing == true) {
                                 var minutes = Math.floor(info.length_seconds / 60);
