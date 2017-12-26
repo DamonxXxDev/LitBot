@@ -33,7 +33,6 @@ function play(song, msg) {
       return;
     }
     if(tokens.cache_songs == true){
-    console.log("cache");
     fs.stat('./.data/downloadedSongs/' + song.video_id + '.' + song.format, (err, stat) => {
     if (err == null) {
       dispatcher = msg.guild.voiceConnection.playFile('./.data/downloadedSongs/' + song.video_id + '.' + song.format);
