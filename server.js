@@ -1,6 +1,5 @@
 const { Client } = require('discord.js');
 var yt = require('ytdl-core');
-var lodash = require('lodash');
 var urlchk = require('valid-url');
 const tokens = require('./.data/tokens.json');
 const client = new Client();
