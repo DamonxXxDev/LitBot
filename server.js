@@ -1120,6 +1120,7 @@ const commands = {
       request(options, function(error, response, body) {
         if (error) console.log(error);
         var data = JSON.parse(body);
+        console.log(body);
         fortniteApiCooldown = true;
         setTimeout(function(){
           fortniteApiCooldown = false;
@@ -1141,6 +1142,7 @@ const commands = {
 
         }
         if (args[4] === "all"){
+        var fieldsArray = [];
         msg.channel.send({
           "embed": {
             "description": "All Gamemodes Fortnite stats for **" + args[3] + "** on platform **" + data.platformNameLong +"**.",
@@ -1187,8 +1189,8 @@ const commands = {
                 "inline": true
               },
               {
-                "name": "Top 10",
-                "value": data.lifeTimeStats.find(o => o.key === "Top 10s").value,
+                "name": "Top 12",
+                "value": data.lifeTimeStats.find(o => o.key === "Top 12s").value,
                 "inline": true
               },
               {
