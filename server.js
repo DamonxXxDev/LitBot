@@ -482,7 +482,7 @@ const commands = {
                                 },
                                 "fields": [{
                                         "name": "Channel",
-                                        "value": info.title,
+                                        "value": results[number].channelTitle,
                                         "inline": true
                                     },
                                     {
