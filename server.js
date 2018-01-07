@@ -1,4 +1,4 @@
-const { Client } = require('discord.js');
+ const { Client } = require('discord.js');
 var yt = require('ytdl-core');
 var urlchk = require('valid-url');
 const tokens = require('./.data/tokens.json');
@@ -336,17 +336,15 @@ const commands = {
           var songs = "songs";
           if (queue[msg.guild.id].autoplaylist.length == 1) songs = "song";
           queue[msg.guild.id].autoplaylist.forEach((song, i) => {
-              tosend.push(`${i+1}. ${song.title} \n   Requested by: ${song.requester} \n   URL: ${song.url}`);
+              tosend.push(`${i+1}. ${song.title} \n   Requested by: ${song.requester} \n   URL: ${song.url}\u2063`);
           });
-          msg.channel.send(`__**${msg.guild.name}'s Autoplaylist:**__ Currently **${tosend.length}** ${songs} in autoplaylist \n\`\`\`${tosend.join('\n')}\`\`\``, {split: true});
+          msg.channel.send(`__**${msg.guild.name}'s Autoplaylist:**__ Currently **${tosend.length}** ${songs} in autoplaylist \n\`\`\`${tosend.join('\n')}\`\`\``, {split: {char: '\u2063', prepend: '\`\`\`', append: '\`\`\`'}});
       }
     }
     },
     'autoplaylistremove': (msg) => {
       //check if user has Bot Controller role
-      for (var i = 0; i < roleids.length; i++) {
-          if (roleids[i].guildid == msg.guild.id) {
-              if (msg.member.roles.has(roleids[i].roleid)) {
+      if(hasRole(msg) == false) return;
                 next();
                 function next(){
                   //read autoplaylist file
@@ -420,11 +418,6 @@ const commands = {
                     msg.channel.send("Removing by name is not yet supported. Please send the link to the video. You can get all songs in the autoplaylist with the command " + tokens.prefix + "autoplaylist.");
                   }
                 }
-              }else{
-                msg.channel.send("Could not remove from autoplaylist, because you are not in the LitBot controller role.");
-              }
-            }
-          }
     },
     'aplremove': (msg) => {
       commands.autoplaylistremove(msg);
@@ -436,9 +429,7 @@ const commands = {
       commands.autoplaylist(msg);
     },
     'autoplaylistadd': (msg) => {
-      for (var i = 0; i < roleids.length; i++) {
-          if (roleids[i].guildid == msg.guild.id) {
-              if (msg.member.roles.has(roleids[i].roleid)) {
+        if(hasRole(msg) == false) return;
         let url = msg.content.split(' ')[1];
         if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}autoplaylistadd`);
         getAPL(msg);
@@ -618,11 +609,7 @@ const commands = {
                 });
             });
         }
-          }else{
-        msg.channel.send("Could not add to autoplaylist, because you aren't in the LitBot controller role.");
-        }
-      }
-    }
+
     },
     'play': (msg) => {
         if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = "undefined";
@@ -842,21 +829,14 @@ const commands = {
       playAutoPlaylist(msg);
     },
     'disconnect': (msg) => {
-      for (var i = 0; i < roleids.length; i++) {
-          if (roleids[i].guildid == msg.guild.id) {
-              if (msg.member.roles.has(roleids[i].roleid)) {
-                const voiceChannel = msg.member.voiceChannel;
-                if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t disconnect from your voice channel...');
-                if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
-                canPlayAutoplaylist[msg.guild.id].canPlay = false;
-                queue[msg.guild.id].songs = [];
-                queue[msg.guild.id].playing = false;
-                voiceChannel.leave();
-              }else{
-                msg.channel.send("Could not disconnect, because you aren't in the LitBot Controller role.")
-              }
-            }
-          }
+      if(hasRole(msg) == false) return;
+      const voiceChannel = msg.member.voiceChannel;
+      if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t disconnect from your voice channel...');
+      if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
+      canPlayAutoplaylist[msg.guild.id].canPlay = false;
+      queue[msg.guild.id].songs = [];
+      queue[msg.guild.id].playing = false;
+      voiceChannel.leave();
     },
     'queue': (msg) => {
         if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
@@ -865,9 +845,9 @@ const commands = {
         var songs = "songs";
         if (queue[msg.guild.id].songs.length == 1) songs = "song";
         queue[msg.guild.id].songs.forEach((song, i) => {
-            tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}`);
+            tosend.push(`${i+1}. ${song.title} - Requested by: ${song.requester}\u2063`);
         });
-        msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** ${songs} queued ${(tosend.length > 15 ? '*[Only next 15 shown]*' : '')}\n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
+        msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** ${songs} queued \n\`\`\`${tosend.join('\n')}\`\`\``, {split: {char: '\u2063', prepend: '\`\`\`', append: '\`\`\`'}});
     },
     'shuffle': (msg) => {
         if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
@@ -902,20 +882,17 @@ const commands = {
         }
     },
     'help': (msg) => {
-        let tosend = ['```xl', tokens.prefix + 'fortnite stats <psn/xbl/pc> <username> <all/solo/duo/squad>: "Get fortnite stats of player in chosen gamemode."', tokens.prefix + 'weather <city>: "Get weather in city."', tokens.prefix + 'steam sale: "Shows the next Steam sale."' , tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', tokens.prefix + 'autoplaylist: "Show songs in autoplaylist. "', 'Bot Controller commands:', tokens.prefix + 'autoplaylistadd, apladd <song>: "Add a song to the autoplaylist. Enter search terms or youtube url after this command. "',tokens.prefix + 'autoplaylistremove, aplremove <url>: "Remove a song from autoplaylist. Enter URL after this command. You can see the URLs of the songs in the autoplaylist with ' + tokens.prefix + 'autoplaylist."', tokens.prefix + 'addcommand <command> <response>: "Adds a custom command."', tokens.prefix + 'removecommand <command>: "Removes a custom command."', tokens.prefix + 'shuffle: "Shuffles queue."', tokens.prefix + 'loopqueue: "Puts queue on loop."', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."', tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."', 'volume+(+++): "Increases volume by 2%."', 'volume-(---): "Decreases volume by 2%."', '```'];
+        let tosend = ['```xl', tokens.prefix + 'chooserole: "Choose a Bot Controller role. If a Bot Controller role is set, requires the Bot Controller role."', tokens.prefix + 'fortnite stats <psn/xbl/pc> <username> <all/solo/duo/squad>: "Get fortnite stats of player in chosen gamemode."', tokens.prefix + 'weather <city>: "Get weather in city."', tokens.prefix + 'steam sale: "Shows the next Steam sale."' , tokens.prefix + 'join: "Join voice channel of message sender."', tokens.prefix + 'queue: "Shows the current queue, up to 15 songs shown."', tokens.prefix + 'play: "Play a song. Enter search terms or link after this command. "', tokens.prefix + 'autoplaylist: "Show songs in autoplaylist. "', 'Bot Controller commands:', tokens.prefix + 'autoplaylistadd, apladd <song>: "Add a song to the autoplaylist. Enter search terms or youtube url after this command. "',tokens.prefix + 'autoplaylistremove, aplremove <url>: "Remove a song from autoplaylist. Enter URL after this command. You can see the URLs of the songs in the autoplaylist with ' + tokens.prefix + 'autoplaylist."', tokens.prefix + 'addcommand <command> <response>: "Adds a custom command."', tokens.prefix + 'removecommand <command>: "Removes a custom command."', tokens.prefix + 'shuffle: "Shuffles queue."', tokens.prefix + 'loopqueue: "Puts queue on loop."', 'the following commands only function while the play command is running:'.toUpperCase(), tokens.prefix + 'pause: "Pauses the music."', tokens.prefix + 'resume: "Resumes the music."', tokens.prefix + 'skip: "Skips the playing song."', tokens.prefix + 'time: "Shows the playtime of the song."', 'volume+(+++): "Increases volume by 2%."', 'volume-(---): "Decreases volume by 2%."', '```'];
         msg.channel.send(tosend.join('\n'));
     },
     /*'reboot': (msg) => {
-    	for(var i = 0; i < roleids.length; i++) {
-    	if(roleids[i].guildid == msg.guild.id) {
-    	if (msg.member.roles.has(roleids[i].roleid)) process.exit(); //Requires a node module like Forever to work.
+      if(hasRole(msg) === false) return;
+    	process.exit(); //Requires a node module like Forever to work.
     	}}
     	//removed to stop anyone from rebooting the bot, if used as a public bot
     }, */
     'addcommand': (msg) => {
-        for (var i = 0; i < roleids.length; i++) {
-            if (roleids[i].guildid == msg.guild.id) {
-                if (msg.member.roles.has(roleids[i].roleid)) {
+        if(hasRole(msg) == false) return;
                     let args = msg.content.toLowerCase().split('"');
                     var command = args[1];
                     var response = args[3];
@@ -939,11 +916,6 @@ const commands = {
                             collector.stop();
                         }
                     });
-                } else {
-                    msg.channel.send("Couldn't add command, because you are not in the Bot Controller role.");
-                }
-            }
-        }
     },
     'customcommands': (msg) => {
         if (customcmds[msg.guild.id].cmds.length == 0) return msg.channel.send(`Add some custom commands first with ${tokens.prefix}addcommand`);
@@ -954,9 +926,7 @@ const commands = {
         msg.channel.send(`${msg.guild.name}'s Custom Commands: \n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
     },
     'removecommand': (msg) => {
-        for (var i = 0; i < roleids.length; i++) {
-            if (roleids[i].guildid == msg.guild.id) {
-                if (msg.member.roles.has(roleids[i].roleid)) {
+      if(hasRole(msg) == false) return;
                     var splitcommand = msg.content.split('"')[1];
                     for (var i = 0; i < customcmds[msg.guild.id].cmds.length; i++) {
                         if (customcmds[msg.guild.id].cmds[i].command == splitcommand) {
@@ -968,11 +938,6 @@ const commands = {
                             break;
                         }
                     }
-                } else {
-                    msg.channel.send("Couldn't add command, because you're not in the Bot Controller role.");
-                }
-            }
-        }
     },
     'steam': (msg) => {
       var args = msg.content.split(' ');
@@ -1523,6 +1488,96 @@ const commands = {
   'ping': (msg) => {
     msg.channel.send("Ping?")
     .then(m => m.edit(`Pong! Latency is ${m.createdTimestamp - msg.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`));
+  },
+  'chooserole': (msg) => {
+    for (var i = 0; i < roleids.length; i++) {
+      if (roleids[i].guildid == msg.guild.id) {
+        if(msg.guild.roles.get(roleids[i].roleid)){
+          if(hasRole(msg) === false){
+            return;
+          }
+        }
+      }
+    }
+    var tosend = [];
+    var roleArray = msg.guild.roles.array();
+    roleArray.forEach((role, i) => {
+        if(role.name !== "@everyone"){
+        tosend.push(`${i}. ${role.name} ID: ${role.id}`);
+      }
+    });
+    //msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** ${songs} queued ${(tosend.length > 15 ? '*[Only next 15 shown]*' : '')}\n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
+    msg.channel.send("Choose a role that will be used as the Bot Controller role with " + tokens.prefix + "select <number>, or cancel with " + tokens.prefix + "cancel: \n" + tosend.join("\n"));
+    var collector = msg.channel.createCollector(m => m);
+    var timeout;
+    setAutoCancel();
+    function setAutoCancel(){
+      timeout = setTimeout(function(){
+        msg.channel.send("Canceled.");
+        if(typeof collector !== 'undefined'){
+          if(collector.ended === false){
+          collector.stop();
+          }
+        }
+        if(typeof collector2 !== 'undefined'){
+          if(collector2.ended === false){
+          collector2.stop();
+          }
+        }
+      }, 20000)
+    }
+
+    collector.on('collect', m => {
+    if(m.author.id !== msg.author.id) return;
+    var cmd = tokens.prefix + "select";
+    var canc = tokens.prefix + "cancel";
+    if(m.content === canc){
+      msg.channel.send("Canceled.");
+      collector.stop();
+      clearTimeout(timeout);
+    }
+    if(m.content.startsWith(cmd)){
+      var num = m.content.split(' ')[1];
+      if (!isNumeric(num) || !num || num < 1 || num > tosend.length){
+        msg.channel.send("Argument 2: number invalid.");
+        return;
+      }
+      msg.channel.send("Are you sure you want to set " + roleArray[num].name + " with ID " + roleArray[num].id + " as the Bot Controller role? Reply yes/no.");
+      let collector2 = m.channel.createCollector(m => m);
+      collector.stop();
+      collector2.on('collect', mesg => {
+        if(mesg.content === canc){
+          collector2.stop();
+          clearTimeout(timeout);
+        }
+        if(mesg.content === "yes"){
+            for (var i = 0; i < roleids.length; i++) {
+                if (roleids[i].guildid === mesg.guild.id) {
+                  roleids.splice(i, 1);
+                  fs.writeFile("./.data/roleids.json", JSON.stringify(roleids, null, '\t'), "utf8", (err) => {
+                      if (err) console.log('Error saving admin role to file: ' + err);
+                    });
+                }
+            }
+            writeRolesToFile(roleArray[num]);
+            msg.channel.send("Bot Controller role set.");
+            console.log("Wrote roleid for guild " + roleArray[num].guild.name + ", " + roleArray[num].name + " to file.");
+            clearTimeout(timeout);
+            collector.stop();
+            if(collector2){
+              if(collector2.ended === false){
+              collector2.stop();
+              }
+            }
+        }else if(mesg.content === "no"){
+          collector2.stop();
+          clearTimeout(timeout);
+          commands.chooserole(msg);
+        }
+      })
+
+    }
+  })
   }
 };
 function getRoleIds(){
@@ -1557,7 +1612,6 @@ function getRoleIds(){
 }
 
 function checkRoleIds(){
-  //var startts = new Date().getTime();
   getRoleIds();
   var tried = 0;
   //timeout because getRoleIds is async
@@ -1581,66 +1635,38 @@ function checkRoleIds(){
         });
       }
     }
-  var guildArray = guilds.array();
-  //check if bot has been added to guild while offline
-  for (var i = 0; i < guildArray.length; i++){
-    function check(id) {
-    return id.guildid == guildArray[i].id;
-    }
-    if (roleids.find(check) == undefined){
-      if (guildArray[i].roles.find("name", "LitBot Controller")){
-        writeRolesToFile(guildArray[i].roles.find("name", "LitBot Controller"));
-        console.log("Wrote roleid for guild " + guildArray[i].name + " to file.");
-        guildArray[i].owner.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
-      }else{
-        console.log("Added to guild: " + guildArray[i].name);
-        guildArray[i].owner.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
-        guildArray[i].createRole({
-                name: "LitBot Controller",
-                color: "BLUE"
-            })
-            .catch(function(reason){
-            console.log("Removed from guild: " + guild.name + " because the bot didn't have the Manage Roles permission.");
-            guildArray[i].owner.send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
-            .then(function(){
-            guildArray[i].leave();
-            });
-            })
-            .then(role => writeRolesToFile(role));
-      }
-    }
-  }
-  /*var endts = new Date().getTime();
-  var took = endts - startts;
-  console.log("Took " + took + "ms");*/
 }, 0030);
 }
 client.on('ready', () => {
     console.log('ready!');
+    setGame();
     getRoleIds();
     checkRoleIds();
 });
 
 client.on('guildCreate', function(guild) {
     console.log('Bot added to guild ' + guild.name);
-    guild.owner.send("Thanks for adding me to this server! \nAdd everyone you want to be able to add commands for the bot to the LitBot Controller role. Don't remove the bot controller role, or anyone can not add commands or remove them. \nUse " + tokens.prefix + "help to view the commands.");
-    guild.createRole({
-            name: "LitBot Controller",
-            color: "BLUE"
-        })
-        .catch(function(reason){
-        console.log("Removed from guild: " + guild.name + " because the bot didn't have the Manage Roles permission.");
-        guild.owner.send("Couldn't create Bot Controller role. Please reinvite the bot to the server with the permission Manage Roles. You can remove the permission after inviting.")
-        .then(function(){
-        guild.leave();
-        });
-        })
-        .then(role => writeRolesToFile(role));
+    setGame();
 });
+function hasRole(msg){
+  for (var i = 0; i < roleids.length; i++) {
+    if (roleids[i].guildid == msg.guild.id) {
+      if(msg.member.roles.has(roleids[i].roleid)){
+        return true;
+      }
+    }
+  }
+  msg.channel.send("Couldn't execute command, because you don't have the Bot Controller role. If the role has been removed, use the command " + tokens.prefix + "chooserole to choose a Bot Controller role.");
+  return false;
+}
+function setGame(){
+  client.user.setGame("In " + client.guilds.size + " guilds");
+}
 function writeRolesToFile(role) {
   if (role){
     getRoleIds();
-    roleids.push({
+    setTimeout(function(){
+      roleids.push({
       name: role.guild.name,
       guildid: role.guild.id,
       roleid: role.id
@@ -1648,9 +1674,12 @@ function writeRolesToFile(role) {
     fs.writeFile("./.data/roleids.json", JSON.stringify(roleids, null, '\t'), "utf8", (err) => {
     if (err) console.log('Error saving admin role to file: ' + err);
 });
+},0200);
+
 }
 }
 client.on('guildDelete', function(guild) {
+    setGame();
     console.log('Removed from guild: ' + guild.name);
     for (var i = 0; i < roleids.length; i++) {
         if (roleids[i].guildid == guild.id) {
@@ -1668,11 +1697,15 @@ function isNumeric(n) {
 return !isNaN(parseFloat(n)) && isFinite(n);
 }
 client.on('roleDelete', function(role) {
+
   len = roleids.length;
   for (var i = 0; i < len; i++) {
       if (roleids[i].roleid === role.id) {
-        role.guild.owner.send("LitBot controller role deleted. Leaving guild. Reinvite with the permission Manage Roles, if you want to get the bot back to the guild.");
-        role.guild.leave();
+        console.log("Role removed in guild: " + role.guild.name);
+        roleids.splice(i, 1);
+        fs.writeFile("./.data/roleids.json", JSON.stringify(roleids, null, '\t'), "utf8", (err) => {
+            if (err) console.log('Error saving admin role to file: ' + err);
+        });
         return;
       }
   }
