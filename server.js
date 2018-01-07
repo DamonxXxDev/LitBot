@@ -21,7 +21,7 @@ let canPlayAutoplaylist = {};
 var fortniteApiCooldown = false;
 const fs = require('fs');
 function play(song, msg) {
-    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true; console.log("sus");}
+    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true;}
     if (canPlayAutoplaylist[msg.guild.id].canPlay == false) {
         canPlayAutoplaylist[msg.guild.id].canPlay = true;
         return;
