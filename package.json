@@ -10,7 +10,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
     "discord.js": "11.2.1",
-    "erlpack": "github:hammerandchisel/erlpack",
+    "erlpack": "github:discordapp/erlpack",
     "node-opus": "^0.2.7",
     "request": "^2.83.0",
     "sodium": "^2.0.1",
