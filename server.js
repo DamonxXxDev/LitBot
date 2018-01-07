@@ -21,7 +21,7 @@ let canPlayAutoplaylist = {};
 var fortniteApiCooldown = false;
 const fs = require('fs');
 function play(song, msg) {
-    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true; console.log("sus");}
+    if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {canPlayAutoplaylist[msg.guild.id] = {}; canPlayAutoplaylist[msg.guild.id].canPlay = true;}
     if (canPlayAutoplaylist[msg.guild.id].canPlay == false) {
         canPlayAutoplaylist[msg.guild.id].canPlay = true;
         return;
@@ -88,7 +88,7 @@ function afterDownload(){
         }
     });
     console.log(`Playing: ${song.title} as requested by: ${song.requester} in guild: ${msg.guild.name}`);
-    let collector = msg.channel.createCollector(m => m);
+    let collector = msg.channel.createMessageCollector(m => m);
     collector.on('collect', m => {
         if (m.content.startsWith(tokens.prefix + 'pause')) {
             msg.channel.send('Paused.').then(() => {
@@ -168,7 +168,7 @@ function afterDownload(){
                         },
                         {
                             "name": "Playtime",
-                            "value": `${Math.floor(dispatcher.time / 60000)}:${Math.floor((dispatcher.time % 60000)/1000) <10 ? '0' + Math.floor((dispatcher.time % 60000)/1000) : Math.floor((dispatcher.time % 60000)/1000)}/` + finalTime,
+                            "value": `${Math.floor(dispatcher.streamTime / 60000)}:${Math.floor((dispatcher.streamTime % 60000)/1000) <10 ? '0' + Math.floor((dispatcher.streamTime % 60000)/1000) : Math.floor((dispatcher.streamTime % 60000)/1000)}/` + finalTime,
                             "inline": true
                         }
                     ]
@@ -511,7 +511,7 @@ const commands = {
                     tosend.push(lineNumber + ': ' + results[i].title);
                 }
                 msg.channel.send(tosend.join("\n"));
-                let collector = msg.channel.createCollector(m => m);
+                let collector = msg.channel.createMessageCollector(m => m);
                 var timeout = setTimeout(function() {
                     msg.channel.send('Canceled playing song.');
                     collector.stop();
@@ -702,7 +702,7 @@ const commands = {
                     tosend.push(lineNumber + ': ' + results[i].title);
                 }
                 msg.channel.send(tosend.join("\n"));
-                let collector = msg.channel.createCollector(m => m);
+                let collector = msg.channel.createMessageCollector(m => m);
                 var timeout = setTimeout(function() {
                     msg.channel.send('Canceled playing song.');
                     collector.stop();
@@ -943,7 +943,7 @@ const commands = {
                     var command = args[1];
                     var response = args[3];
                     msg.channel.send('Are you sure you want to add this command: **' + command + '** with response: **' + response + '**. Reply yes/no.');
-                    let collector = msg.channel.createCollector(m => m);
+                    let collector = msg.channel.createMessageCollector(m => m);
                     collector.on('collect', m => {
                         if (m.content == 'yes' && m.author.id == msg.author.id) {
                             console.log('Added command: ' + command + ' with response: ' + response + ' by: ' + msg.author.username + '#' + msg.author.discriminator + ' in guild: ' + msg.guild.name);
@@ -1554,7 +1554,7 @@ const commands = {
     });
     //msg.channel.send(`__**${msg.guild.name}'s Music Queue:**__ Currently **${tosend.length}** ${songs} queued ${(tosend.length > 15 ? '*[Only next 15 shown]*' : '')}\n\`\`\`${tosend.slice(0,15).join('\n')}\`\`\``);
     msg.channel.send("Choose a role that will be used as the Bot Controller role with " + tokens.prefix + "select <number>, or cancel with " + tokens.prefix + "cancel: \n" + tosend.join("\n"));
-    var collector = msg.channel.createCollector(m => m);
+    var collector = msg.channel.createMessageCollector(m => m);
     var timeout;
     setAutoCancel();
     function setAutoCancel(){
@@ -1706,7 +1706,7 @@ function hasRole(msg){
   return false;
 }
 function setGame(){
-  client.user.setGame("In " + client.guilds.size + " guilds");
+  client.user.setPresence({activity: {name: client.guilds.size + " guilds", type: 'WATCHING'}});
 }
 function writeRolesToFile(role) {
   if (role){

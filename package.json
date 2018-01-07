@@ -9,15 +9,16 @@
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
-    "discord.js": "11.2.1",
-    "erlpack": "github:hammerandchisel/erlpack",
+    "discord.js": "github:hydrabolt/discord.js#voice-rewrite",
+    "erlpack": "github:discordapp/erlpack",
     "node-opus": "^0.2.7",
     "request": "^2.83.0",
     "sodium": "^2.0.1",
-    "uws": "^0.14.5",
+    "uws": "^8.14.0",
     "valid-url": "^1.0.9",
     "youtube-search": "^1.0.10",
-    "ytdl-core": "github:fent/node-ytdl-core#master"
+    "ytdl-core": "github:fent/node-ytdl-core#master",
+    "zlib-sync": "^0.1.4"
   },
   "repository": {
     "type": "git",
