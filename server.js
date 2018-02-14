@@ -1762,6 +1762,10 @@ client.on('message', msg => {
       msg.channel.send("DMs or groups are not yet supported.");
       return;
     }
+    if(msg.mentions.members.has(client.user.id)){
+      msg.channel.send("Type " + tokens.prefix + "help to get a list of commands.");
+      return;
+    }
     if (!customcmds.hasOwnProperty(msg.guild.id)) {
         customcmds[msg.guild.id] = {};
         fs.stat('./.data/cmds_' + msg.guild.id + '.json', (err, stat) => {
