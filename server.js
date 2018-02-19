@@ -21,6 +21,10 @@ client.on('message', async msg => {
       msg.channel.send("DMs or groups are not yet supported.");
       return;
     }
+    if(msg.mentions.members.has(client.user.id)){
+      msg.channel.send("Type " + tokens.prefix + "help to get a list of commands.");
+      return;
+    }
     try {
       addons.functions.checkCmd(msg);
     }
