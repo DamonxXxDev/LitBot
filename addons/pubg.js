@@ -41,7 +41,6 @@ function getSeasons(){
       }else{
         throw "API has probably changed.";
       }
-
       if (JSON.stringify(newSeasons) != JSON.stringify(seasons) || typeof seasons.fetchedAt != "number") {
         console.log("PUBG seasons changed, updating..");
         seasons = newSeasons;
@@ -83,8 +82,10 @@ function readSeasonsFromFile(){
       if (data == ""){
         data = "{}";
         fs.writeFileSync('./.data/pubgseasons.json', "{}");
+        getSeasons();
       }
       seasons = JSON.parse(data);
+      if (seasons == {}) getSeasons();
     }
     catch(err){
       if(err.code = "ENOENT"){
