@@ -23,8 +23,10 @@ var getSeasonInterval;
   }else{
     getSeasons();
   }
-  for(i = 0; i < seasons.seasons.length; i++){
-    seasonnamearr[i] = seasons.seasons[i].name.replace(/\s+/g, '').toLowerCase();
+  if(typeof seasons.seasons != "undefined"){
+    for(i = 0; i < seasons.seasons.length; i++){
+      seasonnamearr[i] = seasons.seasons[i].name.replace(/\s+/g, '').toLowerCase();
+    }
   }
 })();
 function getSeasons(){
@@ -37,11 +39,7 @@ function getSeasons(){
       if (data.seasons instanceof Array){
         newSeasons.seasons = data.seasons.reverse();
       }else{
-        //rewrite file
-        fs.writeFileSync('./.data/pubgseasons.json', "{}");
-        seasons = {};
-        getSeasons();
-        return;
+        throw "API has probably changed.";
       }
 
       if (JSON.stringify(newSeasons) != JSON.stringify(seasons) || typeof seasons.fetchedAt != "number") {
