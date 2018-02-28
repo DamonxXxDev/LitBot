@@ -15,7 +15,7 @@ exports.functions.getRoleIds = (msg) => {
       if(err.code == "ENOENT") {
         // file does not exist
         try{
-          fs.writeFileSync('./.data/roleids.json', [], "utf8");
+          fs.writeFileSync('./.data/roleids.json', "[]", "utf8");
         }
         catch(err){
           console.log('Error saving admin role to file: ' + err);
