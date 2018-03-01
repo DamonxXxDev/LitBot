@@ -10,7 +10,7 @@ This section is for running the bot locally on Windows. If you're on Mac it shou
 ### Download Node.js
 
 Node.js is what will be used to run the bot.
-Download [Node.js 6.X from the website](https://nodejs.org/en/).
+Download [Node.js 8.X from the website](https://nodejs.org/en/).
 
 ### Install Node.js
 
