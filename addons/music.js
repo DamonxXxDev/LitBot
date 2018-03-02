@@ -4,7 +4,6 @@ var yt = require('ytdl-core');
 var urlchk = require('valid-url');
 let queue = {};
 let canPlay = {};
-let nowPlaying = [];
 let canPlayAutoplaylist = {};
 var search = require('youtube-search');
 const tokens = require('../.data/tokens.json');
@@ -107,7 +106,7 @@ function play(song, msg) {
                 },
                 "author": {
                     "name": song.requester,
-                    "icon_url": song.avatarURL
+                    "icon_url": song.displayAvatarURL()
                 },
                 "fields": [{
                         "name": "Channel",
@@ -225,7 +224,7 @@ function playAutoPlaylist(msg) {
                                     title: info.title,
                                     requester: queue[msg.guild.id].autoplaylist[playNumber].requester,
                                     video_id: info.video_id,
-                                    avatarURL: queue[msg.guild.id].autoplaylist[playNumber].avatarURL,
+                                    avatarURL: queue[msg.guild.id].autoplaylist[playNumber].displayAvatarURL(),
                                     length: info.length_seconds,
                                     author: info.author.name,
                                     type: "Autoplaylist",
@@ -352,7 +351,7 @@ exports.commands = {
                         },
                         "author": {
                             "name": msg.author.username,
-                            "icon_url": msg.author.avatarURL
+                            "icon_url": msg.author.displayAvatarURL()
                         },
                         "fields": [{
                                 "name": "Channel",
@@ -397,11 +396,15 @@ exports.commands = {
         description: "Shows what song is currently playing.",
         aliases: ["np"],
         command: (msg, tokens) => {
+          if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
+          if(queue[msg.guild.id].playing == true) {
+            if(msg.guild.voiceConnection) {
           var song = queue[msg.guild.id].currplaying;
           var minutes = Math.floor(song.length / 60);
           var seconds = song.length - minutes * 60;
           var finalTime = minutes + ':' + seconds;
-            m.channel.send({
+          //TODO change every .avatarURL to this and also change webserver-wip server icons
+            msg.channel.send({
               "embed": {
                   "description": "**Now Playing: [" + song.title + "](" + song.url + ") from: " + song.type + "**",
                   "color": 16073282,
@@ -410,7 +413,7 @@ exports.commands = {
                 },
                 "author": {
                     "name": msg.author.username,
-                    "icon_url": msg.author.avatarURL
+                    "icon_url": msg.author.displayAvatarURL()
                 },
                 "fields": [{
                   "name": "Channel",
@@ -430,6 +433,14 @@ exports.commands = {
               ]
             }
           });
+        }else{
+        msg.channel.send("The bot is not currently connected to a voice channel.");
+        if(queue[msg.guild.id]) return queue[msg.guild.id].playing = false;
+        queue[msg.guild.id].downloading = false;
+        }
+      }else{
+        msg.channel.send("The bot is not currently playing music.");
+      }
         }
     },
     autoplaylist: {
@@ -522,7 +533,7 @@ exports.commands = {
                                 },
                                 "author": {
                                     "name": msg.author.username,
-                                    "icon_url": msg.author.avatarURL
+                                    "icon_url": msg.author.displayAvatarURL()
                                 },
                                 "fields": [{
                                         "name": "Channel",
@@ -578,7 +589,7 @@ exports.commands = {
                     title: info.title,
                     requester: requester,
                     video_id: info.video_id,
-                    avatarURL: msg.author.avatarURL,
+                    avatarURL: msg.author.displayAvatarURL(),
                     length: info.length_seconds,
                     author: info.author.name
                 });
@@ -602,7 +613,7 @@ exports.commands = {
                                 },
                                 "author": {
                                     "name": msg.author.username,
-                                    "icon_url": msg.author.avatarURL
+                                    "icon_url": msg.author.displayAvatarURL()
                                 },
                                 "fields": [{
                                         "name": "Channel",
@@ -677,7 +688,7 @@ exports.commands = {
                                 title: info.title,
                                 requester: requester,
                                 video_id: info.video_id,
-                                avatarURL: msg.author.avatarURL,
+                                avatarURL: msg.author.displayAvatarURL(),
                                 length: info.length_seconds,
                                 author: info.author.name,
                                 format: format
@@ -704,7 +715,7 @@ exports.commands = {
                                             },
                                             "author": {
                                                 "name": m.author.username,
-                                                "icon_url": m.author.avatarURL
+                                                "icon_url": m.author.displayAvatarURL()
                                             },
                                             "fields": [{
                                                     "name": "Channel",
@@ -767,7 +778,7 @@ exports.commands = {
                     title: info.title,
                     requester: requester,
                     video_id: info.video_id,
-                    avatarURL: msg.author.avatarURL,
+                    avatarURL: msg.author.displayAvatarURL(),
                     length: info.length_seconds,
                     author: info.author.name,
                     type: "Queue",
@@ -787,7 +798,7 @@ exports.commands = {
                             },
                             "author": {
                                 "name": msg.author.username,
-                                "icon_url": msg.author.avatarURL
+                                "icon_url": msg.author.displayAvatarURL()
                             },
                             "fields": [{
                                     "name": "Channel",
@@ -878,7 +889,7 @@ exports.commands = {
                                 title: info.title,
                                 requester: requester,
                                 video_id: info.video_id,
-                                avatarURL: msg.author.avatarURL,
+                                avatarURL: msg.author.displayAvatarURL(),
                                 length: info.length_seconds,
                                 author: info.author.name,
                                 type: "Queue",
@@ -897,7 +908,7 @@ exports.commands = {
                                         },
                                         "author": {
                                             "name": m.author.username,
-                                            "icon_url": m.author.avatarURL
+                                            "icon_url": m.author.displayAvatarURL()
                                         },
                                         "fields": [{
                                                 "name": "Channel",
