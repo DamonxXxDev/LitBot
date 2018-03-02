@@ -5,6 +5,6 @@
 	"passes", : 3 //can be increased to reduce packetloss at the expense of upload bandwidth, 4-5 should be lossless at the expense of 4-5x upload
 	"weatherkey" : "OpenWeatherMap api key",
 	"fortnite_api_key" : "", // get key from https://fortnitetracker.com/site-api
-	"cache_songs" : false //if true, leaves downloaded songs to disk
+	"cache_songs" : false //if true, downloads songs to disk.
 	//rename this file to tokens.json and move to .data folder before starting bot
 }
