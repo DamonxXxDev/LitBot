@@ -46,7 +46,6 @@ client.on('message', async msg => {
 			}
 		}
 	);
-	//if (commands.hasOwnProperty(msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0])) commands[msg.content.toLowerCase().slice(tokens.prefix.length).split(' ')[0]](msg);
 });
 
 client.login(tokens.d_token).catch(console.error);
