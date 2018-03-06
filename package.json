@@ -1,28 +1,29 @@
 {
-  "name": "LitBot",
+  "name": "litbot",
   "version": "1.0.0",
-  "description": "A v12 Discord.JS music bot in 100 lines or less, forked from OhGodMusicBot",
+  "description": "A Discord.JS music bot forked from OhGodMusicBot",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
   "dependencies": {
+    "bufferutil": "^3.0.0",
     "cheerio": "^1.0.0-rc.2",
-    "discord.js": "11.2.1",
+    "discord.js": "github:hydrabolt/discord.js#cf7dcba",
     "erlpack": "github:discordapp/erlpack",
+    "libsodium-wrappers": "^0.7.0",
     "node-opus": "^0.2.7",
     "request": "^2.83.0",
-    "sodium": "^2.0.1",
-    "uws": "^0.14.5",
     "valid-url": "^1.0.9",
     "youtube-search": "^1.0.10",
-    "ytdl-core": "github:fent/node-ytdl-core#master"
+    "ytdl-core": "github:fent/node-ytdl-core#master",
+    "zlib-sync": "^0.1.4"
   },
   "repository": {
     "type": "git",
     "url": "https://tonit1@bitbucket.org/tonit1/litbot-v2.git"
   },
-  "author": "BDISTIN",
+  "author": "tontool",
   "license": "MIT"
 }
