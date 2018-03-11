@@ -3,7 +3,6 @@ const tokens = require('./.data/tokens.json');
 const client = new Client();
 var addons = require('./addons.js');
 var commandfiles = addons.commands;
-//TODO fix cache downloading video, fix audioonly downloading video
 process.stdin.resume();
 process.on('SIGINT', () => {
 	console.log('Exiting..');
@@ -47,6 +46,5 @@ client.on('message', async msg => {
 		}
 	);
 });
-
 client.login(tokens.d_token).catch(console.error);
 process.on('unhandledRejection', err => console.error(`Uncaught Promise Error: \n${err.stack}`));

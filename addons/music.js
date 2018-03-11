@@ -1,5 +1,7 @@
 //TODO always choose WebmOpus streams in chooseFormat()
 //TODO fix format saved in autoplaylist file saving all data
+//TODO auto disconnect when no one is in voice channel
+//TODO youtube autoplay
 var yt = require('ytdl-core');
 var urlchk = require('valid-url');
 let queue = {};
@@ -194,6 +196,7 @@ function playAutoPlaylist(msg) {
 								if (err) {
 									console.log('Invalid song in Autoplaylist: ' + queue[msg.guild.id].autoplaylist[playNumber].url + 'in guild: ' + msg.guild.name);
 									msg.channel.send('Invalid song in Autoplaylist: ' + queue[msg.guild.id].autoplaylist[playNumber].url);
+									return;
 								}
 								var format = chooseFormat(info.formats);
 								if (!format) {
@@ -384,7 +387,7 @@ exports.commands = {
 					var minutes = Math.floor(song.length / 60);
 					var seconds = song.length - minutes * 60;
 					var finalTime = minutes + ':' + seconds;
-					//TODO change every .avatarURL to this and also change webserver-wip server icons
+					//TODO change webserver-wip server icons to use .displayAvatarURL()
 					msg.channel.send({
 						'embed': {
 							'description': '**Now Playing: [' + song.title + '](' + song.url + ') from: ' + song.type + '**',
@@ -429,12 +432,11 @@ exports.commands = {
 		description: 'Shows the autoplaylist of this server.',
 		aliases: ['apl'],
 		command: (msg) => {
+			getAPL(msg);
 			var times = 0;
 			next();
 			times = times + 1;
-        
 			function next() {
-				getAPL(msg);
 				if (queue[msg.guild.id].autoplaylist == undefined) {
 					if (times > 30) {
 						//if getting autoplaylist fails over 30 times return
@@ -446,7 +448,8 @@ exports.commands = {
 					setTimeout(next, 10);
 					return;
 				}
-				if (!queue == {}) {
+				console.log(queue);
+				if (!queue) {
 					msg.channel.send('No songs in autoplaylist.');
 				} else {
 					let tosend = [];
@@ -641,7 +644,7 @@ exports.commands = {
 					canPlay[msg.channel.id].id = msg.author.id;
 					collector.on('collect', m => {
 						if (!m.author.id == msg.author.id) return;
-						if (m.content.startsWith(tokens.prefix + 'play ')) {
+						if (m.content.startsWith(tokens.prefix + 'play' || tokens.prefix + 'p')) {
 							var parts = m.content.split(' ');
 							parts.shift();
 							var number = parts.join(' ');
