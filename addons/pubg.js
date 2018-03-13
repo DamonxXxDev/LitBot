@@ -12,34 +12,34 @@ var seasonnamearr = [];
 //TODO get recent games
 exports.commands = new Object();
 var getStatsIntervalInMs = 43200000;
-(function (){
+(function () {
 	setInterval(getSeasons, getStatsIntervalInMs);
 	readSeasonsFromFile();
 	readIdsFromFile();
 	//if seasons file is more than 12 hours old, fetch seasons
-	if (typeof seasons.fetchedAt == 'number'){
-		if (seasons.fetchedAt < Date.now() - getStatsIntervalInMs){
+	if (typeof seasons.fetchedAt == 'number') {
+		if (seasons.fetchedAt < Date.now() - getStatsIntervalInMs) {
 			getSeasons();
 		}
-	}else{
+	} else {
 		getSeasons();
 	}
-	if(typeof seasons.seasons != 'undefined'){
-		for(var i = 0; i < seasons.seasons.length; i++){
+	if (typeof seasons.seasons != 'undefined') {
+		for (var i = 0; i < seasons.seasons.length; i++) {
 			seasonnamearr[i] = seasons.seasons[i].name.replace(/\s+/g, '').toLowerCase();
 		}
 	}
 })();
-function getSeasons(){
+function getSeasons() {
 	console.log('PUBG season data older than 12 hours, updating..');
-	request('https://pubg.op.gg/api/const/seasons', function(error, res, body) {
-		try{
+	request('https://pubg.op.gg/api/const/seasons', function (error, res, body) {
+		try {
 			body = '{ "seasons": ' + body + '}';
 			var data = JSON.parse(body);
 			var newSeasons = {};
-			if (data.seasons instanceof Array){
+			if (data.seasons instanceof Array) {
 				newSeasons.seasons = data.seasons.reverse();
-			}else{
+			} else {
 				throw 'API has probably changed.';
 			}
 			if (JSON.stringify(newSeasons) != JSON.stringify(seasons) || typeof seasons.fetchedAt != 'number') {
@@ -49,23 +49,23 @@ function getSeasons(){
 				writeSeasonsToFile();
 			}
 		}
-		catch(err){
+		catch (err) {
 			console.log('Error getting seasons: \n' + err);
 		}
 	});
 }
-async function writeSeasonsToFile(){
-	try{
+async function writeSeasonsToFile() {
+	try {
 		fs.statSync('./.data/');
-		try{
+		try {
 			fs.writeFileSync('./.data/pubgseasons.json', JSON.stringify(seasons, null, '\t'));
 		}
-		catch(err){
+		catch (err) {
 			console.log('Error ' + err + ' writing PUBG seasons to file.');
 		}
 	}
-	catch(err){
-		if(err.code == 'ENOENT') {
+	catch (err) {
+		if (err.code == 'ENOENT') {
 			// file does not exist
 			fs.mkdirSync('./.data/');
 			console.log('.data doesn\'t exist, creating..');
@@ -75,12 +75,12 @@ async function writeSeasonsToFile(){
 		}
 	}
 }
-function readSeasonsFromFile(){
-	try{
+function readSeasonsFromFile() {
+	try {
 		fs.statSync('./.data/');
-		try{
+		try {
 			var data = fs.readFileSync('./.data/pubgseasons.json');
-			if (data == ''){
+			if (data == '') {
 				data = '{}';
 				fs.writeFileSync('./.data/pubgseasons.json', '{}');
 				getSeasons();
@@ -88,18 +88,18 @@ function readSeasonsFromFile(){
 			seasons = JSON.parse(data);
 			if (seasons == {}) getSeasons();
 		}
-		catch(err){
-			if(err.code == 'ENOENT'){
+		catch (err) {
+			if (err.code == 'ENOENT') {
 				fs.writeFileSync('./.data/pubgseasons.json', '{}');
 				console.log('Created pubgseasons.json file.');
 				seasons = {};
-			}else{
+			} else {
 				throw 'Error ' + err + ' reading PUBG seasons from file.';
 			}
 		}
 	}
-	catch(err){
-		if(err.code == 'ENOENT') {
+	catch (err) {
+		if (err.code == 'ENOENT') {
 			// file does not exist
 			fs.mkdirSync('./.data/');
 			console.log('.data doesn\'t exist, creating..');
@@ -110,17 +110,17 @@ function readSeasonsFromFile(){
 	}
 }
 async function writeIdsToFile() {
-	try{
+	try {
 		fs.statSync('./.data/');
-		try{
+		try {
 			fs.writeFileSync('./.data/pubgusernames.json', JSON.stringify(ids, null, '\t'));
 		}
-		catch(err){
+		catch (err) {
 			console.log('Error ' + err + ' writing PUBG ids to file.');
 		}
 	}
-	catch(err){
-		if(err.code == 'ENOENT') {
+	catch (err) {
+		if (err.code == 'ENOENT') {
 			// file does not exist
 			fs.mkdirSync('./.data/');
 			console.log('.data doesn\'t exist, creating..');
@@ -131,27 +131,27 @@ async function writeIdsToFile() {
 	}
 }
 function readIdsFromFile() {
-	try{
+	try {
 		fs.statSync('./.data/');
-		try{
+		try {
 			var data = fs.readFileSync('./.data/pubgusernames.json');
-			if (data == ''){
+			if (data == '') {
 				fs.writeFileSync('./.data/pubgusernames.json', '{}');
 				data = '{}';
 			}
 			ids = JSON.parse(data);
 		}
-		catch(err){
-			if(err.code == 'ENOENT'){
+		catch (err) {
+			if (err.code == 'ENOENT') {
 				fs.writeFileSync('./.data/pubgusernames.json', '{}');
 				console.log('Created pubgusernames.json file.');
-			}else{
+			} else {
 				throw 'Error ' + err + ' reading PUBG ids from file.';
 			}
 		}
 	}
-	catch(err){
-		if(err.code == 'ENOENT') {
+	catch (err) {
+		if (err.code == 'ENOENT') {
 			// file does not exist
 			fs.mkdirSync('./.data/');
 			console.log('.data doesn\'t exist, creating..');
@@ -170,58 +170,59 @@ exports.commands.pubgseasons = {
 	}
 };
 exports.commands.pubgstats = {
-	usage: '<username> <eu/na/as/krjp/oc/sea> <solo/duo/squad> <fpp/tpp> <season>',
+	usage: '<username> <eu/na/as/krjp/oc/sea> <solo/duo/squad/all> <fpp/tpp> <season>',
 	description: 'Gets PUBG stats of player. If you don\'t define the season, the bot will choose the current season. You can get all seasons with command ' + tokens.prefix + 'pubgseasons.',
 	aliases: ['pubgs'],
 	command: (msg) => {
 		var args = msg.content.split(' ');
+		args[1] = args[1].toLowerCase();
 		if (args[1] === undefined) {
 			msg.channel.send('Argument username missing.');
 			return;
 		}
-		if(args[2] == undefined || (args[2] != 'eu' && args[2] != 'na' && args[2] != 'as' && args[2] != 'krjp' && args[2] != 'oc' && args[2] != 'sea')) {
+		if (args[2] == undefined || (args[2] != 'eu' && args[2] != 'na' && args[2] != 'as' && args[2] != 'krjp' && args[2] != 'oc' && args[2] != 'sea')) {
 			msg.channel.send('Argument server invalid.');
 			return;
 		}
 		var queuesize;
-		if(args[3] == undefined || (args[3] != 'solo' && args[3] != 'duo' && args[3] != 'squad')) {
+		if (args[3] == undefined || (args[3] != 'solo' && args[3] != 'duo' && args[3] != 'squad' && args[3] != 'all')) {
 			msg.channel.send('Argument queue size invalid.');
 			return;
-		}else{
-			if(args[3] == 'solo'){
+		} else {
+			if (args[3] == 'solo') {
 				queuesize = 1;
-			}else if(args[3] == 'duo'){
+			} else if (args[3] == 'duo') {
 				queuesize = 2;
-			}else if(args[3] == 'squad'){
+			} else if (args[3] == 'squad') {
 				queuesize = 4;
 			}
 		}
-		if(args[4] == undefined || (args[4] != 'fpp' && args[4] != 'tpp')) {
+		if (args[4] == undefined || (args[4] != 'fpp' && args[4] != 'tpp')) {
 			msg.channel.send('Argument perspective invalid.');
 			return;
 		}
-		if(args[5] == undefined) {
+		if (args[5] == undefined) {
 			args[5] = seasons.seasons[0].key;
-		}else{
+		} else {
 			var invalid = false;
-			for (var i = 0; i < seasons.seasons.length; i++){
-				if(args[5] == seasons.seasons[i].name.replace(/\s+/g, '').toLowerCase()) {
+			for (var i = 0; i < seasons.seasons.length; i++) {
+				if (args[5] == seasons.seasons[i].name.replace(/\s+/g, '').toLowerCase()) {
 					args[5] = seasons.seasons[i].key;
 					break;
-				}else{
-					if(i == seasons.seasons.length - 1){
+				} else {
+					if (i == seasons.seasons.length - 1) {
 						msg.channel.send('Argument season invalid. Seasons: ' + seasonnamearr.join(', '));
 						invalid = true;
 					}
 				}
 			}
-			if (invalid == true){
+			if (invalid == true) {
 				return;
 			}
 		}
-		if(!ids.hasOwnProperty(args[1])) {
-			request('https://pubg.op.gg/api/find/users?nickname[]=' + args[1], function(error, res, body) {
-				try{
+		if (!ids.hasOwnProperty(args[1])) {
+			request('https://pubg.op.gg/api/find/users?nickname[]=' + args[1], function (error, res, body) {
+				try {
 					var data = JSON.parse(body);
 					console.log(data);
 					var id = null;
@@ -229,136 +230,309 @@ exports.commands.pubgstats = {
 						msg.channel.send('Argument username invalid.');
 						return;
 					} else {
-						try{
+						try {
 							id = data[args[1]]._id;
 							ids[args[1]] = id;
 							console.log('idsincommand: ' + JSON.stringify(ids));
 							writeIdsToFile();
 						}
-						catch(err){
+						catch (err) {
 							msg.channel.send('Error while getting user id. API has probably changed.\n' + err);
 							console.log('Error while getting PUBG user id: ' + err + ' API has probably changed.');
 							return;
 						}
 
 					}
-					if(id != null){
+					if (id != null) {
 						ids[args[1]] = id;
 					}
 					writeIdsToFile();
 				}
-				catch(err){
+				catch (err) {
 					console.log('Error while getting PUBG user id. API has probably changed.\n' + err);
 					msg.channel.send('Error while getting user id. API has probably changed.\n' + err);
 					return;
 				}
 			});
 		}
-		//https://pubg.op.gg/api/users/5a678bc4a1bde000011add3c/ranked-stats?season=2018-02&server=eu&queue_size=1&mode=tpp
-		request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/ranked-stats?season=' + args[5] + '&server=' + args[2] + '&queue_size=' + queuesize + '&mode=' + args[4], function(error, res, body) {
-			try{
-				var statsData = JSON.parse(body);
-				if(statsData.message == ''){
-					msg.channel.send('The user hasn\'t played in the chosen season. Seasons: ' + seasonnamearr.join(', '));
-					return;
-				}
-				var winPercent = statsData.stats.win_matches_cnt / statsData.stats.matches_cnt * 100;
-				winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
-				request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/matches/summary-played-with?season=' + args[5] + '&server=' + args[2], function(error, res, body) {
-					var playedWithData = JSON.parse(body);
+		function getPlayedWith() {
+			return new Promise((resolve, reject) => {
+				request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/matches/summary-played-with?season=' + args[5] + '&server=' + args[2], function (error, res, body) {
 					var playedWithStr = '';
-					for (i = 0; i < playedWithData.users.length; i++){
-						playedWithStr = playedWithStr + '**[' + playedWithData.users[i].user.nickname + '](https://steamcommunity.com/profiles/' + playedWithData.users[i].user.identity_id.slice(15, 32) + ')** ' + playedWithData.users[i].stats.matches_count + ' matches\n';
-					}
-					msg.channel.send({
-						'embed': {
-							'description': capitalizeFirstLetter(args[3]) + ' PUBG stats for **' + args[1] + '**.',
-							'color': 16073282,
-							/*"thumbnail": {
-                    "url": '' //could have fortnite icon here
-                  },*/
-							'author': {
-								'name': msg.author.username,
-								'icon_url': msg.author.avatarURL
-							},
-							'footer': {
-								'text': 'Source: https://pubg.op.gg. Data updates when winner is determined.'
-							},
-							'fields': [{
-								'name': 'Rating',
-								'value': statsData.stats.rating,
-								'inline': true
-							},
-							{
-								'name': 'Matches played',
-								'value': statsData.stats.matches_cnt,
-								'inline': true
-							},
-							{
-								'name': 'Kills',
-								'value': statsData.stats.kills_sum,
-								'inline': true
-							},
-							{
-								'name': 'Headshot kills',
-								'value': statsData.stats.headshot_kills_sum,
-								'inline': true
-							},
-							{
-								'name': 'Most kills in game',
-								'value': statsData.stats.kills_max,
-								'inline': true
-							},
-							{
-								'name': 'Wins',
-								'value': statsData.stats.win_matches_cnt,
-								'inline': true
-							},
-							{
-								'name': 'Win%',
-								'value': winPercent + '%',
-								'inline': true
-							},
-							{
-								'name': 'Kills/deaths',
-								'value': Math.round((statsData.stats.kills_sum / statsData.stats.deaths_sum + 0.00001) * 100) / 100 + '',
-								'inline': true
-							},
-							{
-								'name': 'Top 10',
-								'value': statsData.stats.topten_matches_cnt,
-								'inline': true
-							},
-							{
-								'name': 'Longest kill',
-								'value': statsData.stats.longest_kill_max + ' meters',
-								'inline': true
-							},
-							{
-								'name': 'Average damage',
-								'value': Math.round((statsData.stats.damage_dealt_avg + 0.00001) * 100) / 100  + '',
-								'inline': true
-							},
-							{
-								'name': 'Average time survived',
-								'value': Math.round((statsData.stats.time_survived_avg / 60 + 0.00001) * 100) / 100  + ' minutes',
-								'inline': true
-							},
-							{
-								'name': 'Recently played with',
-								'value': playedWithStr,
-								'inline': true
-							}
-							]
+					var error;
+					try {
+						var playedWithData = JSON.parse(body);
+						for (i = 0; i < playedWithData.users.length; i++) {
+							playedWithStr = playedWithStr + '**[' + playedWithData.users[i].user.nickname + '](https://steamcommunity.com/profiles/' + playedWithData.users[i].user.identity_id.slice(15, 32) + ')** ' + playedWithData.users[i].stats.matches_count + ' matches\n';
 						}
-					});
+					}
+					catch (err) {
+						error = err;
+						err.message = "Error fetching played with data.";
+						reject({ err: err });
+					}
+					if (!error) {
+						resolve({ message: "Fetched played with data.", data: playedWithData, str: playedWithStr, err: undefined });
+					}
 				});
-			}
-			catch(err){
-				msg.channel.send('Error while fetching PUBG stats. The API might have been changed. \n ```' + err + '```');
-				console.log('Error while fetching PUBG stats: \n' + err);
-			}
-		});
+			})
+		}
+		if (queuesize !== undefined) {
+			request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/ranked-stats?season=' + args[5] + '&server=' + args[2] + '&queue_size=' + queuesize + '&mode=' + args[4], function (error, res, body) {
+				try {
+					var statsData = JSON.parse(body);
+					if (statsData.message == '') {
+						msg.channel.send('The user hasn\'t played in the chosen season. Seasons: ' + seasonnamearr.join(', '));
+						return;
+					}
+					var winPercent = statsData.stats.win_matches_cnt / statsData.stats.matches_cnt * 100;
+					winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
+					getPlayedWith()
+						.then((value) => {
+							var str = value.str;
+							msg.channel.send({
+								'embed': {
+									'description': capitalizeFirstLetter(args[3]) + ' PUBG stats for **' + args[1] + '**.',
+									'color': 16073282,
+									/*"thumbnail": {
+										"url": '' //could have fortnite icon here
+									  },*/
+									'author': {
+										'name': msg.author.username,
+										'icon_url': msg.author.displayAvatarURL()
+									},
+									'footer': {
+										'text': 'Source: https://pubg.op.gg. Data updates when winner is determined.'
+									},
+									'fields': [{
+										'name': 'Rating',
+										'value': statsData.stats.rating,
+										'inline': true
+									},
+									{
+										'name': 'Matches played',
+										'value': statsData.stats.matches_cnt,
+										'inline': true
+									},
+									{
+										'name': 'Kills',
+										'value': statsData.stats.kills_sum,
+										'inline': true
+									},
+									{
+										'name': 'Deaths',
+										'value': statsData.stats.deaths_sum,
+										'inline': true
+									},
+									{
+										'name': 'Assists',
+										'value': statsData.stats.assists_sum,
+										'inline': true
+									},
+									{
+										'name': 'Headshot kills',
+										'value': statsData.stats.headshot_kills_sum,
+										'inline': true
+									},
+									{
+										'name': 'Most kills in game',
+										'value': statsData.stats.kills_max,
+										'inline': true
+									},
+									{
+										'name': 'Wins',
+										'value': statsData.stats.win_matches_cnt,
+										'inline': true
+									},
+									{
+										'name': 'Win%',
+										'value': winPercent + '%',
+										'inline': true
+									},
+									{
+										'name': 'Kills/deaths',
+										'value': Math.round((statsData.stats.kills_sum / statsData.stats.deaths_sum + 0.00001) * 100) / 100 + '',
+										'inline': true
+									},
+									{
+										'name': 'Top 10',
+										'value': statsData.stats.topten_matches_cnt,
+										'inline': true
+									},
+									{
+										'name': 'Longest kill',
+										'value': statsData.stats.longest_kill_max + ' meters',
+										'inline': true
+									},
+									{
+										'name': 'Average damage',
+										'value': Math.round((statsData.stats.damage_dealt_avg + 0.00001) * 100) / 100 + '',
+										'inline': true
+									},
+									{
+										'name': 'Average time survived',
+										'value': Math.round((statsData.stats.time_survived_avg / 60 + 0.00001) * 100) / 100 + ' minutes',
+										'inline': true
+									},
+									{
+										'name': 'Recently played with',
+										'value': str,
+										'inline': true
+									}
+									]
+								}
+							});
+						}, (reason) => {
+							console.log(reason.err);
+							msg.channel.send("Error fetching PUBG data:\n ```" + reason.err + "```");
+						})
+
+				}
+				catch (err) {
+					msg.channel.send('Error while fetching PUBG stats. The API might have been changed. \n ```' + err + '```');
+					console.log('Error while fetching PUBG stats: \n' + err);
+				}
+			});
+		} else {
+			//for all stats https://pubg.op.gg/api/users/5a678bc4a1bde000011add3c/ranked-stats-groups?server=eu&mode=tpp&season=2018-02
+			request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/ranked-stats-groups?season=' + args[5] + '&server=' + args[2] + '&mode=' + args[4], function (error, res, body) {
+				try {
+					var statsData = JSON.parse(body);
+					if (statsData.message == '') {
+						msg.channel.send('The user hasn\'t played in the chosen season. Seasons: ' + seasonnamearr.join(', '));
+						return;
+					}
+					var alldata = {rating: 0, matches: 0, wins: 0, top10: 0, kills: 0, assists: 0, headshots: 0, deaths: 0, avgdmg: 0, avgtime: 0};
+					for (i = 0; i < statsData.length; i++) {
+						alldata.rating += parseFloat(statsData[i].aggregate.stats.rating);
+						alldata.matches += parseFloat(statsData[i].aggregate.stats.matches_cnt);
+						alldata.wins += parseFloat(statsData[i].aggregate.stats.win_matches_cnt);
+						alldata.top10 += parseFloat(statsData[i].aggregate.stats.topten_matches_cnt);
+						alldata.kills += parseFloat(statsData[i].aggregate.stats.kills_sum);
+						alldata.assists += parseFloat(statsData[i].aggregate.stats.assists_sum);
+						alldata.headshots += parseFloat(statsData[i].aggregate.stats.headshot_kills_sum);
+						alldata.deaths += parseFloat(statsData[i].aggregate.stats.deaths_sum);
+						if (alldata.longestkill == undefined || alldata.longestkill < parseFloat(statsData[i].aggregate.stats.longest_kill_max)) {
+							alldata.longestkill = parseFloat(statsData[i].aggregate.stats.longest_kill_max);
+						}
+						if (alldata.killsMax == undefined || alldata.killsMax < parseFloat(statsData[i].aggregate.stats.kills_max)) {
+							alldata.killsMax = parseFloat(statsData[i].aggregate.stats.kills_max);
+						}
+						alldata.avgdmg += parseFloat(statsData[i].aggregate.stats.damage_dealt_avg);
+						alldata.avgtime += parseFloat(statsData[i].aggregate.stats.time_survived_avg);
+					}
+					alldata.rating = Math.round(alldata.rating / statsData.length);
+					alldata.avgdmg = Math.round(alldata.avgdmg / statsData.length);
+					alldata.avgtime = Math.round(alldata.avgtime / statsData.length);
+					var winPercent = alldata.wins / alldata.matches * 100;
+					winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
+					getPlayedWith()
+						.then((value) => {
+							var str = value.str;
+							msg.channel.send({
+								'embed': {
+									'description': capitalizeFirstLetter(args[3]) + ' PUBG stats for **' + args[1] + '**.',
+									'color': 16073282,
+									/*"thumbnail": {
+										"url": '' //could have fortnite icon here
+									  },*/
+									'author': {
+										'name': msg.author.username,
+										'icon_url': msg.author.displayAvatarURL()
+									},
+									'footer': {
+										'text': 'Source: https://pubg.op.gg. Data updates when winner is determined.'
+									},
+									'fields': [{
+										'name': 'Rating',
+										'value': alldata.rating,
+										'inline': true
+									},
+									{
+										'name': 'Matches played',
+										'value': alldata.matches,
+										'inline': true
+									},
+									{
+										'name': 'Kills',
+										'value': alldata.kills,
+										'inline': true
+									},
+									{
+										'name': 'Deaths',
+										'value': alldata.deaths,
+										'inline': true
+									},
+									{
+										'name': 'Assists',
+										'value': alldata.assists,
+										'inline': true
+									},
+									{
+										'name': 'Headshot kills',
+										'value': alldata.headshots,
+										'inline': true
+									},
+									{
+										'name': 'Most kills in game',
+										'value': alldata.longestkill,
+										'inline': true
+									},
+									{
+										'name': 'Wins',
+										'value': alldata.wins,
+										'inline': true
+									},
+									{
+										'name': 'Win%',
+										'value': winPercent + '%',
+										'inline': true
+									},
+									{
+										'name': 'Kills/deaths',
+										'value': Math.round((alldata.kills / alldata.deaths + 0.00001) * 100) / 100 + '',
+										'inline': true
+									},
+									{
+										'name': 'Top 10',
+										'value': alldata.top10,
+										'inline': true
+									},
+									{
+										'name': 'Longest kill',
+										'value': alldata.longestkill + ' meters',
+										'inline': true
+									},
+									{
+										'name': 'Average damage',
+										'value': Math.round((alldata.avgdmg + 0.00001) * 100) / 100 + '',
+										'inline': true
+									},
+									{
+										'name': 'Average time survived',
+										'value': Math.round((alldata.avgtime / 60 + 0.00001) * 100) / 100 + ' minutes',
+										'inline': true
+									},
+									{
+										'name': 'Recently played with',
+										'value': str,
+										'inline': true
+									}
+									]
+								}
+							});
+						}, (reason) => {
+							console.log(reason.err);
+							msg.channel.send("Error fetching PUBG data:\n ```" + reason.err + "```");
+						})
+
+				}
+				catch (err) {
+					msg.channel.send('Error while fetching PUBG stats. The API might have been changed. \n ```' + err + '```');
+					console.log('Error while fetching PUBG stats: \n' + err.stack);
+				}
+			});
+		}
 	}
 };
 function capitalizeFirstLetter(string) {
