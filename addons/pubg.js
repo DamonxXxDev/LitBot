@@ -218,63 +218,7 @@ exports.commands.pubgstats = {
 				return;
 			}
 		}
-		if (!ids.hasOwnProperty(args[1])) {
-			request('https://pubg.op.gg/api/find/users?nickname[]=' + args[1], function (error, res, body) {
-				try {
-					var data = JSON.parse(body);
-					console.log(data);
-					var id = null;
-					if (data[args[1]] == null) {
-						msg.channel.send('Argument username invalid.');
-						return;
-					} else {
-						try {
-							id = data[args[1]]._id;
-							ids[args[1]] = id;
-							console.log('idsincommand: ' + JSON.stringify(ids));
-							writeIdsToFile();
-						}
-						catch (err) {
-							msg.channel.send('Error while getting user id. API has probably changed.\n' + err);
-							console.log('Error while getting PUBG user id: ' + err + ' API has probably changed.');
-							return;
-						}
-
-					}
-					if (id != null) {
-						ids[args[1]] = id;
-					}
-					writeIdsToFile();
-				}
-				catch (err) {
-					console.log('Error while getting PUBG user id. API has probably changed.\n' + err);
-					msg.channel.send('Error while getting user id. API has probably changed.\n' + err);
-					return;
-				}
-			});
-		}
-		function getPlayedWith() {
-			return new Promise((resolve, reject) => {
-				request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/matches/summary-played-with?season=' + args[5] + '&server=' + args[2], function (error, res, body) {
-					var playedWithStr = '';
-					var error;
-					try {
-						var playedWithData = JSON.parse(body);
-						for (i = 0; i < playedWithData.users.length; i++) {
-							playedWithStr = playedWithStr + '**[' + playedWithData.users[i].user.nickname + '](https://steamcommunity.com/profiles/' + playedWithData.users[i].user.identity_id.slice(15, 32) + ')** ' + playedWithData.users[i].stats.matches_count + ' matches\n';
-						}
-					}
-					catch (err) {
-						error = err;
-						err.message = "Error fetching played with data.";
-						reject({ err: err });
-					}
-					if (!error) {
-						resolve({ message: "Fetched played with data.", data: playedWithData, str: playedWithStr, err: undefined });
-					}
-				});
-			})
-		}
+		getID(args[1]);
 		if (queuesize !== undefined) {
 			request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/ranked-stats?season=' + args[5] + '&server=' + args[2] + '&queue_size=' + queuesize + '&mode=' + args[4], function (error, res, body) {
 				try {
@@ -285,7 +229,7 @@ exports.commands.pubgstats = {
 					}
 					var winPercent = statsData.stats.win_matches_cnt / statsData.stats.matches_cnt * 100;
 					winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
-					getPlayedWith()
+					getPlayedWith(ids[args[1]], args[5], args[2])
 						.then((value) => {
 							var str = value.str;
 							msg.channel.send({
@@ -424,7 +368,7 @@ exports.commands.pubgstats = {
 					alldata.avgtime = Math.round(alldata.avgtime / statsData.length);
 					var winPercent = alldata.wins / alldata.matches * 100;
 					winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
-					getPlayedWith()
+					getPlayedWith(ids[args[1]], args[5], args[2])
 						.then((value) => {
 							var str = value.str;
 							msg.channel.send({
@@ -473,7 +417,7 @@ exports.commands.pubgstats = {
 									},
 									{
 										'name': 'Most kills in game',
-										'value': alldata.longestkill,
+										'value': alldata.killsMax,
 										'inline': true
 									},
 									{
@@ -535,4 +479,63 @@ exports.commands.pubgstats = {
 };
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
+}
+function getID (username){
+	if (!ids.hasOwnProperty(username)) {
+		request('https://pubg.op.gg/api/find/users?nickname[]=' + username, function (error, res, body) {
+			try {
+				var data = JSON.parse(body);
+				console.log(data);
+				var id = null;
+				if (data[username] == null) {
+					msg.channel.send('Argument username invalid.');
+					return;
+				} else {
+					try {
+						id = data[username]._id;
+						ids[username] = id;
+						console.log('idsincommand: ' + JSON.stringify(ids));
+						writeIdsToFile();
+					}
+					catch (err) {
+						msg.channel.send('Error while getting user id. API has probably changed.\n' + err);
+						console.log('Error while getting PUBG user id: ' + err + ' API has probably changed.');
+						return;
+					}
+
+				}
+				if (id != null) {
+					ids[username] = id;
+				}
+				writeIdsToFile();
+			}
+			catch (err) {
+				console.log('Error while getting PUBG user id. API has probably changed.\n' + err);
+				msg.channel.send('Error while getting user id. API has probably changed.\n' + err);
+				return;
+			}
+		});
+	}
+}
+function getPlayedWith(id, season, server) {
+	return new Promise((resolve, reject) => {
+		request('https://pubg.op.gg/api/users/' + id + '/matches/summary-played-with?season=' + season + '&server=' + server, function (error, res, body) {
+			var playedWithStr = '';
+			var error;
+			try {
+				var playedWithData = JSON.parse(body);
+				for (i = 0; i < playedWithData.users.length; i++) {
+					playedWithStr = playedWithStr + '**[' + playedWithData.users[i].user.nickname + '](https://steamcommunity.com/profiles/' + playedWithData.users[i].user.identity_id.slice(15, 32) + ')** ' + playedWithData.users[i].stats.matches_count + ' matches\n';
+				}
+			}
+			catch (err) {
+				error = err;
+				err.message = "Error fetching played with data.";
+				reject({ err: err });
+			}
+			if (!error) {
+				resolve({ message: "Fetched played with data.", data: playedWithData, str: playedWithStr, err: undefined });
+			}
+		});
+	})
 }
