@@ -4,10 +4,8 @@ const tokens = require('../.data/tokens.json');
 var ids = {};
 var seasons = {};
 var seasonnamearr = [];
-//TODO create seasonnamestring variable
 //TODO cooldown
-//TODO pubg leaderboards, all queues stats
-//for all stats https://pubg.op.gg/api/users/5a678bc4a1bde000011add3c/ranked-stats-groups?server=eu&mode=tpp&season=2018-02
+//TODO pubg leaderboards
 // recent games https://pubg.op.gg/api/users/5a678bc4a1bde000011add3c/matches/recent?server=eu&queue_size=2&mode=tpp
 //TODO get recent games
 exports.commands = new Object();
