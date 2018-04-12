@@ -111,6 +111,7 @@ function readSeasonsFromFile() {
 }
 function writeIdsToFile() {
 	return new Promise((resolve,reject) => {
+		writeIds();
 		function writeIds() {
 		fs.stat('./.data/', (err, stat) => {
 			if (err) {
@@ -129,12 +130,11 @@ function writeIdsToFile() {
 
 				}
 			} else {
-				fs.writeFile('./.data/cmds_' + msg.guild.id + '.json', JSON.stringify(ids, null, '\t'), (err) => {
+				fs.writeFile('./.data/pubgusernames.json', JSON.stringify(ids, null, '\t'), (err) => {
 					if (err) {
 						console.log("Error writing PUBG ids to file.");
 						reject(err);
 					} else {
-						customcmds[msg.guild.id].cmds = JSON.parse(data);
 						resolve("Wrote ids to file.");
 					}
 				})
@@ -237,6 +237,7 @@ exports.commands.pubgstats = {
 		getID(args[1], msg)
 		.then(() => {
 			if (queuesize !== undefined) {
+				console.log('https://pubg.op.gg/api/users/' + ids[args[1]] + '/ranked-stats?season=' + args[5] + '&server=' + args[2] + '&queue_size=' + queuesize + '&mode=' + args[4]);
 				request('https://pubg.op.gg/api/users/' + ids[args[1]] + '/ranked-stats?season=' + args[5] + '&server=' + args[2] + '&queue_size=' + queuesize + '&mode=' + args[4], function (error, res, body) {
 					try {
 						var statsData = JSON.parse(body);
@@ -547,6 +548,8 @@ function getID (username, msg){
 					return;
 				}
 			});
+		}else{
+			resolve(ids[username]);
 		}
 	})
 
