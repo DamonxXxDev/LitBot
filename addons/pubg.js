@@ -507,8 +507,6 @@ function getID (username, msg){
 				try {
 					var data = JSON.parse(body);
 					var id = null;
-					console.log(data);
-					console.log(JSON.parse('{"' + username + '": null}'));
 					if (JSON.stringify(data) == JSON.stringify(JSON.parse('{"' + username + '": null}'))){
 						msg.channel.send("Couldn't find player **" + username + "**.");
 						reject(Error("invalid username"));
@@ -522,7 +520,6 @@ function getID (username, msg){
 						try {
 							id = data[username]._id;
 							ids[username] = id;
-							console.log('idsincommand: ' + JSON.stringify(ids));
 							writeIdsToFile().catch(function(reason){
 								throw reason;
 							});
