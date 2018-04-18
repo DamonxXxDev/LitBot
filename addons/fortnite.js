@@ -3,7 +3,7 @@ var fortniteApiCooldown = false;
 exports.commands = new Object();
 exports.commands.fortnitestats = {
 	usage: '<pc/psn/xbl> <username> <all/solo/duo/squad>',
-	description: 'Gets Fortnite stats of player.',
+	description: 'Gets lifetime Fortnite stats of player. Fortnite stats from 1 season not implemented yet.',
 	aliases: ['fnstats', 'fns'],
 	command: (msg, tokens) => {
 		var args = msg.content.split(' ');
@@ -44,6 +44,7 @@ exports.commands.fortnitestats = {
 			if (error) console.log(error);
 			try {
 				var data = JSON.parse(body);
+				console.log(data);
 			}
 			catch(error) {
 				msg.channel.send('Error getting data. Try again later.');
@@ -66,6 +67,7 @@ exports.commands.fortnitestats = {
 			//console.log("response: " + response + " body: " + body);
 			//let obj = customcmds[msg.guild.id].cmds.find(o => o.command === msg.content.toLowerCase());
 			var winPercent;
+			try{
 			if (args[3] === 'all') {
 				winPercent = data.lifeTimeStats.find(o => o.key === 'Wins').value / data.lifeTimeStats.find(o => o.key === 'Matches Played').value * 100;
 				winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
@@ -89,8 +91,13 @@ exports.commands.fortnitestats = {
 							'inline': true
 						},
 						{
-							'name': 'Time Played',
-							'value': data.lifeTimeStats.find(o => o.key === 'Time Played').value,
+							'name': 'Kills',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills').value,
+							'inline': true
+						},
+						{
+							'name': 'Kills Per Minute',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills Per Min').value,
 							'inline': true
 						},
 						{
@@ -109,6 +116,11 @@ exports.commands.fortnitestats = {
 							'inline': true
 						},
 						{
+							'name': 'Matches Played',
+							'value': data.lifeTimeStats.find(o => o.key === 'Matches Played').value,
+							'inline': true
+						},
+						{
 							'name': 'Top 25',
 							'value': data.lifeTimeStats.find(o => o.key === 'Top 25s').value,
 							'inline': true
@@ -120,14 +132,14 @@ exports.commands.fortnitestats = {
 						},
 						{
 							'name': 'Top 3',
-							'value': data.lifeTimeStats.find(o => o.key === 'Top 3s').value,
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 3').value,
 							'inline': true
 						}
 						]
 					}
 				});
 			} else if (args[3] === 'solo') {
-				winPercent = data.stats.p2.top1.valueInt / data.stats.p2.matches.valueInt * 100;
+				winPercent = data.lifeTimeStats.find(o => o.key === 'Wins').value / data.lifeTimeStats.find(o => o.key === 'Matches Played').value * 100;
 				winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
 				msg.channel.send({
 					'embed': {
@@ -145,17 +157,22 @@ exports.commands.fortnitestats = {
 						},
 						'fields': [{
 							'name': 'Score',
-							'value': data.stats.p2.score.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Score').value,
 							'inline': true
 						},
 						{
-							'name': 'Time Played',
-							'value': data.stats.p2.minutesPlayed.displayValue,
+							'name': 'Kills',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills').value,
+							'inline': true
+						},
+						{
+							'name': 'Kills Per Minute',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills Per Min').value,
 							'inline': true
 						},
 						{
 							'name': 'Wins',
-							'value': data.stats.p2.top1.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Wins').value,
 							'inline': true
 						},
 						{
@@ -165,44 +182,34 @@ exports.commands.fortnitestats = {
 						},
 						{
 							'name': 'Kills/deaths',
-							'value': data.stats.p2.kd.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'K/d').value,
 							'inline': true
 						},
 						{
-							'name': 'Kills per minute',
-							'value': data.stats.p2.kpm.displayValue,
-							'inline': true
-						},
-						{
-							'name': 'Kills per match',
-							'value': data.stats.p2.kpg.displayValue,
-							'inline': true
-						},
-						{
-							'name': 'Kills',
-							'value': data.stats.p2.kills.displayValue,
+							'name': 'Matches Played',
+							'value': data.lifeTimeStats.find(o => o.key === 'Matches Played').value,
 							'inline': true
 						},
 						{
 							'name': 'Top 25',
-							'value': data.stats.p2.top25.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 25s').value,
 							'inline': true
 						},
 						{
-							'name': 'Top 10',
-							'value': data.stats.p2.top10.displayValue,
+							'name': 'Top 12',
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 12s').value,
 							'inline': true
 						},
 						{
 							'name': 'Top 3',
-							'value': data.stats.p2.top3.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 3').value,
 							'inline': true
 						}
 						]
 					}
 				});
 			} else if (args[3] === 'duo') {
-				winPercent = data.stats.p10.top1.valueInt / data.stats.p10.matches.valueInt * 100;
+				winPercent = data.lifeTimeStats.find(o => o.key === 'Wins').value / data.lifeTimeStats.find(o => o.key === 'Matches Played').value * 100;
 				winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
 				msg.channel.send({
 					'embed': {
@@ -220,17 +227,22 @@ exports.commands.fortnitestats = {
 						},
 						'fields': [{
 							'name': 'Score',
-							'value': data.stats.p10.score.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Score').value,
 							'inline': true
 						},
 						{
-							'name': 'Time Played',
-							'value': data.stats.p10.minutesPlayed.displayValue,
+							'name': 'Kills',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills').value,
+							'inline': true
+						},
+						{
+							'name': 'Kills Per Minute',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills Per Min').value,
 							'inline': true
 						},
 						{
 							'name': 'Wins',
-							'value': data.stats.p10.top1.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Wins').value,
 							'inline': true
 						},
 						{
@@ -240,44 +252,34 @@ exports.commands.fortnitestats = {
 						},
 						{
 							'name': 'Kills/deaths',
-							'value': data.stats.p10.kd.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'K/d').value,
 							'inline': true
 						},
 						{
-							'name': 'Kills per minute',
-							'value': data.stats.p10.kpm.displayValue,
-							'inline': true
-						},
-						{
-							'name': 'Kills per match',
-							'value': data.stats.p10.kpg.displayValue,
-							'inline': true
-						},
-						{
-							'name': 'Kills',
-							'value': data.stats.p10.kills.displayValue,
+							'name': 'Matches Played',
+							'value': data.lifeTimeStats.find(o => o.key === 'Matches Played').value,
 							'inline': true
 						},
 						{
 							'name': 'Top 25',
-							'value': data.stats.p10.top25.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 25s').value,
 							'inline': true
 						},
 						{
-							'name': 'Top 10',
-							'value': data.stats.p10.top10.displayValue,
+							'name': 'Top 12',
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 12s').value,
 							'inline': true
 						},
 						{
 							'name': 'Top 3',
-							'value': data.stats.p10.top3.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 3').value,
 							'inline': true
 						}
 						]
 					}
 				});
 			} else if (args[3] === 'squad') {
-				winPercent = data.stats.p9.top1.valueInt / data.stats.p9.matches.valueInt * 100;
+				winPercent = data.lifeTimeStats.find(o => o.key === 'Wins').value / data.lifeTimeStats.find(o => o.key === 'Matches Played').value * 100;
 				winPercent = Math.round((winPercent + 0.00001) * 100) / 100;
 				msg.channel.send({
 					'embed': {
@@ -295,17 +297,22 @@ exports.commands.fortnitestats = {
 						},
 						'fields': [{
 							'name': 'Score',
-							'value': data.stats.p9.score.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Score').value,
 							'inline': true
 						},
 						{
-							'name': 'Time Played',
-							'value': data.stats.p9.minutesPlayed.displayValue,
+							'name': 'Kills',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills').value,
+							'inline': true
+						},
+						{
+							'name': 'Kills Per Minute',
+							'value': data.lifeTimeStats.find(o => o.key === 'Kills Per Min').value,
 							'inline': true
 						},
 						{
 							'name': 'Wins',
-							'value': data.stats.p9.top1.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Wins').value,
 							'inline': true
 						},
 						{
@@ -315,37 +322,27 @@ exports.commands.fortnitestats = {
 						},
 						{
 							'name': 'Kills/deaths',
-							'value': data.stats.p9.kd.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'K/d').value,
 							'inline': true
 						},
 						{
-							'name': 'Kills per minute',
-							'value': data.stats.p9.kpm.displayValue,
-							'inline': true
-						},
-						{
-							'name': 'Kills per match',
-							'value': data.stats.p9.kpg.displayValue,
-							'inline': true
-						},
-						{
-							'name': 'Kills',
-							'value': data.stats.p9.kills.displayValue,
+							'name': 'Matches Played',
+							'value': data.lifeTimeStats.find(o => o.key === 'Matches Played').value,
 							'inline': true
 						},
 						{
 							'name': 'Top 25',
-							'value': data.stats.p9.top25.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 25s').value,
 							'inline': true
 						},
 						{
-							'name': 'Top 10',
-							'value': data.stats.p9.top10.displayValue,
+							'name': 'Top 12',
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 12s').value,
 							'inline': true
 						},
 						{
 							'name': 'Top 3',
-							'value': data.stats.p9.top3.displayValue,
+							'value': data.lifeTimeStats.find(o => o.key === 'Top 3').value,
 							'inline': true
 						}
 						]
@@ -358,6 +355,13 @@ exports.commands.fortnitestats = {
 				msg.channel.send('Invalid gamemode.');
 				return;
 			}
+		}
+		catch(err){
+			msg.channel.send('Error getting data.');
+			console.log("Error getting Fortnite data. API has probably changed.");
+			console.error(err);
+			return;
+		}
 		});
 	}
 };
