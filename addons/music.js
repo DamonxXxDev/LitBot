@@ -175,7 +175,8 @@ function playAutoPlaylist(msg) {
 		canPlayAutoplaylist[msg.guild.id].canPlay = true;
 		return;
 	}
-	if (!msg.guild.voiceConnection) return join(msg).then(() => playAutoPlaylist(msg));
+	//TODO finish
+	if (!msg.guild.voiceConnection) return join(msg).then(() => playAutoPlaylist(msg)).catch(msg.channel.send("I couldn't join your voice channel.."));
 	fs.stat('./.data/', (err) => {
 		if (err == null) {
 			fs.stat('./.data/autoPL_' + msg.guild.id + '.json', (err) => {
@@ -742,7 +743,7 @@ exports.commands = {
 			if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = 'undefined';
 			if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return;
 			if (canPlay[msg.channel.id].canPlay == false) return;
-			if (!msg.guild.voiceConnection) return join(msg).then(() => exports.commands.play.command(msg, tokens, commandfiles, client));
+			if (!msg.guild.voiceConnection) return join(msg).then(() => {exports.commands.play.command(msg, tokens, commandfiles, client)}, () => {msg.channel.send("I couldn't join your voice channel..")});
 			if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
 			let url = msg.content.split(' ')[1];
 			if (urlchk.isWebUri(url)) {
@@ -945,13 +946,13 @@ exports.commands = {
 		description: 'Joins a voice channel.',
 		aliases: ['j'],
 		command: (msg) => {
-			join(msg);
+			join(msg).catch((reason) => {msg.channel.send("I couldn't join your voice channel..");});
 		}
 	},
 	'playautoplaylist': {
 		usage: '',
 		description: 'Plays the autoplaylist.',
-		aliases: ['papl', 'pautoplaylist', 'autoplaylistplay'],
+		aliases: ['papl', 'pautoplaylist', 'autoplaylistplay', 'playapl'],
 		command: (msg) => {
 			msg.channel.send('Playing Autoplaylist..');
 			if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
@@ -967,6 +968,10 @@ exports.commands = {
 			const voiceChannel = msg.member.voiceChannel;
 			if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t disconnect from your voice channel...');
 			if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
+			if (!canPlayAutoplaylist.hasOwnProperty(msg.guild.id)) {
+				canPlayAutoplaylist[msg.guild.id] = {};
+				canPlayAutoplaylist[msg.guild.id].canPlay = false;
+			}
 			canPlayAutoplaylist[msg.guild.id].canPlay = false;
 			queue[msg.guild.id].songs = [];
 			queue[msg.guild.id].playing = false;
