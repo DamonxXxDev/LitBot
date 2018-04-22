@@ -8,15 +8,15 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "bufferutil": "^3.0.0",
+    "bufferutil": "^3.0.4",
     "cheerio": "^1.0.0-rc.2",
-    "discord.js": "github:hydrabolt/discord.js#cf7dcba",
+    "discord.js": "github:hydrabolt/discord.js#b186472",
     "erlpack": "github:discordapp/erlpack",
-    "libsodium-wrappers": "^0.7.0",
+    "libsodium-wrappers": "^0.7.3",
     "node-opus": "^0.2.7",
-    "request": "^2.83.0",
+    "request": "^2.85.0",
     "valid-url": "^1.0.9",
-    "youtube-search": "^1.0.10",
+    "youtube-search": "^1.1.0",
     "ytdl-core": "github:fent/node-ytdl-core#master",
     "zlib-sync": "^0.1.4"
   },

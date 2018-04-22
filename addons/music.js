@@ -64,7 +64,7 @@ function play(song, msg) {
 				}
 				catch (err) {
 					queue[msg.guild.id].ytdl.unpipe();
-					queue[msg.guild.id].writeStream.destroy('Error piping to Discord');
+					dispatcher.end();
 					console.log('Error playing: \n' + err);
 					msg.channel.send('Error playing: \n```' + err + '```');
 					play(song, msg);
@@ -91,7 +91,7 @@ function play(song, msg) {
 		}), playOptions);
 		afterDownload();
 	}
-    
+
 	function afterDownload() {
 		queue[msg.guild.id].currplaying = song;
 		var minutes = Math.floor(song.length / 60);
@@ -153,8 +153,8 @@ function play(song, msg) {
 function join(msg) {
 	return new Promise((resolve, reject) => {
 		const voiceChannel = msg.member.voiceChannel;
-		if (!voiceChannel || voiceChannel.type !== 'voice') return msg.channel.send('I couldn\'t connect to your voice channel...');
-		voiceChannel.join().then(connection => resolve(connection)).catch(err => reject(err));
+		if (!voiceChannel || voiceChannel.type !== 'voice') return reject(Error("Invalid channel"));
+		voiceChannel.join().then(connection => resolve(connection), reason => reject(err));
 	});
 }
 function chooseFormat(formats) {
@@ -176,7 +176,10 @@ function playAutoPlaylist(msg) {
 		return;
 	}
 	//TODO finish
-	if (!msg.guild.voiceConnection) return join(msg).then(() => playAutoPlaylist(msg)).catch(msg.channel.send("I couldn't join your voice channel.."));
+	if (!msg.guild.voiceConnection) return join(msg).then(() => playAutoPlaylist(msg), () => {
+		msg.channel.send("I couldn't join your voice channel..");
+		return;
+	});
 	fs.stat('./.data/', (err) => {
 		if (err == null) {
 			fs.stat('./.data/autoPL_' + msg.guild.id + '.json', (err) => {
@@ -246,36 +249,46 @@ function playAutoPlaylist(msg) {
 
 function getAPL(msg) {
 	if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [];
-	fs.stat('./.data/', (err) => {
-		if (err == null) {
-			fs.stat('./.data/autoPL_' + msg.guild.id + '.json', (err) => {
+	return new Promise((resolve, reject) => {
+		if (typeof queue[msg.guild.id].autoplaylist != "object") {
+			fs.stat('./.data/', (err) => {
 				if (err == null) {
-					fs.readFile('./.data/autoPL_' + msg.guild.id + '.json', (err, data) => {
-						if (err) {
-							console.log('Error reading autoplaylist from file: ' + err);
+					fs.stat('./.data/autoPL_' + msg.guild.id + '.json', (err) => {
+						if (err == null) {
+							fs.readFile('./.data/autoPL_' + msg.guild.id + '.json', (err, data) => {
+								if (err) {
+									console.log('Error reading autoplaylist from file: ' + err);
+									reject(err);
+								} else {
+									queue[msg.guild.id].autoplaylist = JSON.parse(data);
+									resolve(queue[msg.guild.id].autoplaylist);
+								}
+							});
+						} else if (err.code == 'ENOENT') {
+							// file does not exist
+							queue[msg.guild.id].autoplaylist = [];
+							resolve(queue[msg.guild.id].autoplaylist);
 						} else {
-							queue[msg.guild.id].autoplaylist = JSON.parse(data);
+							console.log('Error reading autoplaylist: ', err);
+							reject(err);
+							return;
 						}
 					});
 				} else if (err.code == 'ENOENT') {
-					// file does not exist
+					// .data does not exist
+					fs.mkdirSync('./.data/');
 					queue[msg.guild.id].autoplaylist = [];
+					resolve(queue[msg.guild.id].autoplaylist);
 				} else {
-					console.log('Error reading autoplaylist: ', err);
-					msg.channel.send('Error reading autoplaylist: ', err);
+					console.log('Error checking if ./.data/ exists: ', err);
+					reject(err);
 					return;
 				}
 			});
-		} else if (err.code == 'ENOENT') {
-			// .data does not exist
-			fs.mkdirSync('./.data/');
-			queue[msg.guild.id].autoplaylist = [];
 		} else {
-			console.log('Error checking if ./.data/ exists: ', err);
-			msg.channel.send('Error checking if ./.data/ exists: ', err);
-			return;
+			resolve(queue[msg.guild.id].autoplaylist);
 		}
-	});
+	})
 }
 exports.commands = {
 	pause: {
@@ -433,30 +446,16 @@ exports.commands = {
 		description: 'Shows the autoplaylist of this server.',
 		aliases: ['apl'],
 		command: (msg) => {
-			getAPL(msg);
-			var times = 0;
-			next();
-			times = times + 1;
-			function next() {
-				if (queue[msg.guild.id].autoplaylist == undefined) {
-					if (times > 30) {
-						//if getting autoplaylist fails over 30 times return
-						//timeout because getAPL function is async
-						msg.channel.send('Error getting autoplaylist. Try again later.');
-						console.log('Error getting autoplaylist.');
-						return;
-					}
-					setTimeout(next, 10);
-					return;
-				}
-				console.log(queue);
-				if (!queue) {
+			getAPL(msg).then((value) => {
+				if (queue[msg.guild.id].autoplaylist.length == 0) {
 					msg.channel.send('No songs in autoplaylist.');
+					return;
 				} else {
 					let tosend = [];
 					var songs = 'songs';
 					if (queue[msg.guild.id].autoplaylist.length == 1) songs = 'song';
 					queue[msg.guild.id].autoplaylist.forEach((song, i) => {
+						//TODO better split
 						tosend.push(`${i + 1}. ${song.title} \n   Requested by: ${song.requester} \n   URL: ${song.url}  \u2063`);
 					});
 					msg.channel.send(`__**${msg.guild.name}'s Autoplaylist:**__ Currently **${tosend.length}** ${songs} in autoplaylist \n\`\`\`${tosend.join('\n')}\`\`\``, {
@@ -467,7 +466,10 @@ exports.commands = {
 						}
 					});
 				}
-			}
+			}, (reason) => {
+				msg.channel.send("Error getting autoplaylist.");
+				console.log("Error getting autoplaylist in guild " + msg.guild.id);
+			});
 		}
 	},
 	autoplaylistremove: {
@@ -477,79 +479,68 @@ exports.commands = {
 		command: (msg, tokens) => {
 			//check if user has Bot Controller role
 			if (addons.functions.hasRole(msg, tokens) == false) return;
-			next();
-        
-			function next() {
-				//read autoplaylist file
-				getAPL(msg);
-				var times = 0;
-				times = times + 1;
-				if (queue[msg.guild.id].autoplaylist == undefined) {
-					if (times > 30) {
-						console.log('Couldn\'t get autoplaylist for guild: ' + msg.guild.name);
-						msg.channel.send('Error getting autoplaylist. Try again later.');
-					}
-					setTimeout(next, 5);
-					return;
-				}
-				let url = msg.content.split(' ')[1];
-				if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}autoplaylistremove`);
-				if (urlchk.isWebUri(url)) {
-					yt.getInfo(url, (err, info) => {
-						if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
-						let obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() === url.toLowerCase());
-						if (obj) {
-							var requester = msg.author.username + '#' + msg.author.discriminator;
-							queue[msg.guild.id].autoplaylist.splice(queue[msg.guild.id].autoplaylist.findIndex(o => o.url.toLowerCase() === url.toLowerCase()), 1);
-							//convert time into minutes and seconds
-							var minutes = Math.floor(info.length_seconds / 60);
-							var seconds = info.length_seconds - minutes * 60;
-							var finalTime = minutes + ':' + seconds;
-							//get thumbnail url for embed
-							var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
-							//send embed message
-							msg.channel.send({
-								'embed': {
-									'description': '**Removed from autoplaylist: [' + info.title + '](' + url + ')**',
-									'color': 123433,
-									'thumbnail': {
-										'url': thumbUrl
-									},
-									'author': {
-										'name': requester,
-										'icon_url': msg.author.displayAvatarURL()
-									},
-									'fields': [{
-										'name': 'Channel',
-										'value': info.title,
-										'inline': true
-									},
-									{
-										'name': 'Duration',
-										'value': finalTime,
-										'inline': true
-									},
-									{
-										'name': 'Songs in autoplaylist',
-										'value': queue[msg.guild.id].autoplaylist.length,
-										'inline': true
+			getAPL(msg).then((value) => {
+					let url = msg.content.split(' ')[1];
+					if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}autoplaylistremove`);
+					if (urlchk.isWebUri(url)) {
+						yt.getInfo(url, (err, info) => {
+							if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
+							let obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() === url.toLowerCase());
+							if (obj) {
+								var requester = msg.author.username + '#' + msg.author.discriminator;
+								queue[msg.guild.id].autoplaylist.splice(queue[msg.guild.id].autoplaylist.findIndex(o => o.url.toLowerCase() === url.toLowerCase()), 1);
+								//convert time into minutes and seconds
+								var minutes = Math.floor(info.length_seconds / 60);
+								var seconds = info.length_seconds - minutes * 60;
+								var finalTime = minutes + ':' + seconds;
+								//get thumbnail url for embed
+								var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
+								//send embed message
+								msg.channel.send({
+									'embed': {
+										'description': '**Removed from autoplaylist: [' + info.title + '](' + url + ')**',
+										'color': 123433,
+										'thumbnail': {
+											'url': thumbUrl
+										},
+										'author': {
+											'name': requester,
+											'icon_url': msg.author.displayAvatarURL()
+										},
+										'fields': [{
+											'name': 'Channel',
+											'value': info.title,
+											'inline': true
+										},
+										{
+											'name': 'Duration',
+											'value': finalTime,
+											'inline': true
+										},
+										{
+											'name': 'Songs in autoplaylist',
+											'value': queue[msg.guild.id].autoplaylist.length,
+											'inline': true
+										}
+										]
 									}
-									]
-								}
-							});
-							fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
-								if (err) {
-									console.log('Error ' + err + ' saving autoplaylist to file in guild: ' + msg.guild.name);
-									msg.channel.send('Error ' + err + ' saving autoplaylist to file.');
-									return;
-								}
-							});
-						}
-					});
-				} else {
-					msg.channel.send('Removing by name is not yet supported. Please send the link to the video. You can get all songs in the autoplaylist with the command ' + tokens.prefix + 'autoplaylist.');
-				}
-			}
+								});
+								fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
+									if (err) {
+										console.log('Error ' + err + ' saving autoplaylist to file in guild: ' + msg.guild.name);
+										msg.channel.send('Error ' + err + ' saving autoplaylist to file.');
+										return;
+									}
+								});
+							}
+						});
+					} else {
+						msg.channel.send('Removing by name is not yet supported. Please send the link to the video. You can get all songs in the autoplaylist with the command ' + tokens.prefix + 'autoplaylist.');
+					}
+			}, (reason) => {
+				msg.channel.send("Error getting autoplaylist.");
+				console.log("Error getting autoplaylist in guild " + msg.guild.id);
+			});
 		}
 	},
 	autoplaylistadd: {
@@ -560,179 +551,183 @@ exports.commands = {
 			if (addons.functions.hasRole(msg, tokens) == false) return;
 			let url = msg.content.split(' ')[1];
 			if (url == '' || url === undefined) return msg.channel.send(`You must add a YouTube video url, search term, or id after ${tokens.prefix}autoplaylistadd`);
-			getAPL(msg);
-			if (urlchk.isWebUri(url)) {
-				yt.getInfo(url, (err, info) => {
-					if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
-					var obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() === url.toLowerCase());
-					if (obj) return msg.channel.send('This song is already on the Autoplaylist.');
-					var requester = msg.author.username + '#' + msg.author.discriminator;
-					//push to autoplaylist array
-					queue[msg.guild.id].autoplaylist.push({
-						url: url,
-						title: info.title,
-						requester: requester,
-						video_id: info.video_id,
-						avatarURL: msg.author.displayAvatarURL(),
-						length: info.length_seconds,
-						author: info.author.name
-					});
-					//save autoplaylist array to file
-					fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
-						if (err) {
-							console.log('Error ' + err + ' saving autoplaylist to file in guild: ' + msg.guild.name);
-							msg.channel.send('Error ' + err + ' saving autoplaylist to file.');
-							return;
-						} else {
-							var minutes = Math.floor(info.length_seconds / 60);
-							var seconds = info.length_seconds - minutes * 60;
-							var finalTime = minutes + ':' + seconds;
-							var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
-							msg.channel.send({
-								'embed': {
-									'description': '**Added song to autoplaylist: [' + info.title + '](' + url + ')**',
-									'color': 123433,
-									'thumbnail': {
-										'url': thumbUrl
-									},
-									'author': {
-										'name': msg.author.username,
-										'icon_url': msg.author.displayAvatarURL()
-									},
-									'fields': [{
-										'name': 'Channel',
-										'value': info.author.name,
-										'inline': true
-									},
-									{
-										'name': 'Duration',
-										'value': finalTime,
-										'inline': true
-									},
-									{
-										'name': 'Songs in autoplaylist',
-										'value': queue[msg.guild.id].autoplaylist.length,
-										'inline': true
+			getAPL(msg).then((value) => {
+				if (urlchk.isWebUri(url)) {
+					yt.getInfo(url, (err, info) => {
+						if (err) return msg.channel.send('Invalid YouTube Link: ' + err);
+						var obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() === url.toLowerCase());
+						if (obj) return msg.channel.send('This song is already on the Autoplaylist.');
+						var requester = msg.author.username + '#' + msg.author.discriminator;
+						//push to autoplaylist array
+						queue[msg.guild.id].autoplaylist.push({
+							url: url,
+							title: info.title,
+							requester: requester,
+							video_id: info.video_id,
+							avatarURL: msg.author.displayAvatarURL(),
+							length: info.length_seconds,
+							author: info.author.name
+						});
+						//save autoplaylist array to file
+						fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
+							if (err) {
+								console.log('Error ' + err + ' saving autoplaylist to file in guild: ' + msg.guild.name);
+								msg.channel.send('Error ' + err + ' saving autoplaylist to file.');
+								return;
+							} else {
+								var minutes = Math.floor(info.length_seconds / 60);
+								var seconds = info.length_seconds - minutes * 60;
+								var finalTime = minutes + ':' + seconds;
+								var thumbUrl = 'https://img.youtube.com/vi/' + info.video_id + '/mqdefault.jpg';
+								msg.channel.send({
+									'embed': {
+										'description': '**Added song to autoplaylist: [' + info.title + '](' + url + ')**',
+										'color': 123433,
+										'thumbnail': {
+											'url': thumbUrl
+										},
+										'author': {
+											'name': msg.author.username,
+											'icon_url': msg.author.displayAvatarURL()
+										},
+										'fields': [{
+											'name': 'Channel',
+											'value': info.author.name,
+											'inline': true
+										},
+										{
+											'name': 'Duration',
+											'value': finalTime,
+											'inline': true
+										},
+										{
+											'name': 'Songs in autoplaylist',
+											'value': queue[msg.guild.id].autoplaylist.length,
+											'inline': true
+										}
+										]
 									}
-									]
-								}
-							});
+								});
+							}
+						});
+					});
+				} else {
+					if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = 'undefined';
+					if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send(canPlay[msg.channel.id].reason);
+					var parts = msg.content.split(' ');
+					parts.shift();
+					var searchTerms = parts.join(' ');
+					search(searchTerms, opts, function (err, results) {
+						if (err) return console.log('Error searching youtube: ' + err);
+						//console.dir(results);
+						var tosend = ['**Select a song with the `' + tokens.prefix + 'play <song>` command, or cancel using the `' + tokens.prefix + 'cancel` command (Automatically cancels after 20 seconds.): **'];
+						for (var i = 0; i < results.length; i++) {
+							var lineNumber = i + 1;
+							tosend.push(lineNumber + ': ' + results[i].title);
 						}
-					});
-				});
-			} else {
-				if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = 'undefined';
-				if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return msg.channel.send(canPlay[msg.channel.id].reason);
-				var parts = msg.content.split(' ');
-				parts.shift();
-				var searchTerms = parts.join(' ');
-				search(searchTerms, opts, function (err, results) {
-					if (err) return console.log('Error searching youtube: ' + err);
-					//console.dir(results);
-					var tosend = ['**Select a song with the `' + tokens.prefix + 'play <song>` command, or cancel using the `' + tokens.prefix + 'cancel` command (Automatically cancels after 20 seconds.): **'];
-					for (var i = 0; i < results.length; i++) {
-						var lineNumber = i + 1;
-						tosend.push(lineNumber + ': ' + results[i].title);
-					}
-					msg.channel.send(tosend.join('\n'));
-					let collector = msg.channel.createMessageCollector(m => m);
-					var timeout = setTimeout(function () {
-						msg.channel.send('Canceled playing song.');
-						collector.stop();
-					}, 20000);
-					canPlay[msg.channel.id].canPlay = false;
-					canPlay[msg.channel.id].reason = 'Someone is already choosing a song on this channel.';
-					canPlay[msg.channel.id].id = msg.author.id;
-					collector.on('collect', m => {
-						if (!m.author.id == msg.author.id) return;
-						if (m.content.startsWith(tokens.prefix + 'play' || tokens.prefix + 'p')) {
-							var parts = m.content.split(' ');
-							parts.shift();
-							var number = parts.join(' ');
-							if (!isNumeric(number)) return;
-							if (!number < 6 && !number > 0) return;
-							number = number - 1;
-							var url = results[number].link;
-							yt.getInfo(url, (err, info) => {
-								if (err) return m.channel.send('Error while adding song to autoplaylist: ' + err);
-								let obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() == url.toLowerCase());
-								if (obj) {
-									msg.channel.send('This song is already on the Autoplaylist.');
-									return;
-								}
-								var format = chooseFormat(info.formats);
-								if (!format) {
-									msg.channel.send('Could not download. Try again later.');
-									console.log('Error downloading. Could not get format.');
-									return;
-								}
-								var requester = m.author.username + '#' + m.author.discriminator;
-								queue[msg.guild.id].autoplaylist.push({
-									url: url,
-									title: info.title,
-									requester: requester,
-									video_id: info.video_id,
-									avatarURL: msg.author.displayAvatarURL(),
-									length: info.length_seconds,
-									author: info.author.name,
-									format: format
-								});
-								fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
-									if (err) {
-										console.log('Error ' + err + ' saving autoplaylist to file in guild: ' + m.guild.name);
-										m.channel.send('Error ' + err + ' saving autoplaylist to file.');
-										return;
-									} else {
-										clearTimeout(timeout);
-										collector.stop();
-										canPlay[msg.channel.id].canPlay = true;
-										delete canPlay[msg.channel.id].id;
-										var minutes = Math.floor(info.length_seconds / 60);
-										var seconds = info.length_seconds - minutes * 60;
-										var finalTime = minutes + ':' + seconds;
-										m.channel.send({
-											'embed': {
-												'description': '**Added song to autoplaylist: [' + info.title + '](' + url + ')**',
-												'color': 123433,
-												'thumbnail': {
-													'url': results[number].thumbnails.high.url
-												},
-												'author': {
-													'name': m.author.username,
-													'icon_url': m.author.displayAvatarURL()
-												},
-												'fields': [{
-													'name': 'Channel',
-													'value': results[number].channelTitle,
-													'inline': true
-												},
-												{
-													'name': 'Duration',
-													'value': finalTime,
-													'inline': true
-												},
-												{
-													'name': 'Songs in autoplaylist',
-													'value': queue[m.guild.id].autoplaylist.length,
-													'inline': true
-												}
-												]
-											}
-										});
-									}
-								});
-							});
-						} else {
-							if (!m.content.startsWith(tokens.prefix + 'cancel')) return;
-							clearTimeout(timeout);
+						msg.channel.send(tosend.join('\n'));
+						let collector = msg.channel.createMessageCollector(m => m);
+						var timeout = setTimeout(function () {
+							msg.channel.send('Canceled playing song.');
 							collector.stop();
-							m.channel.send('Canceled playing song.');
-							canPlay[msg.channel.id].canPlay = true;
-							delete canPlay[msg.channel.id].id;
-						}
+						}, 20000);
+						canPlay[msg.channel.id].canPlay = false;
+						canPlay[msg.channel.id].reason = 'Someone is already choosing a song on this channel.';
+						canPlay[msg.channel.id].id = msg.author.id;
+						collector.on('collect', m => {
+							if (!m.author.id == msg.author.id) return;
+							if (m.content.startsWith(tokens.prefix + 'play' || tokens.prefix + 'p')) {
+								var parts = m.content.split(' ');
+								parts.shift();
+								var number = parts.join(' ');
+								if (!isNumeric(number)) return;
+								if (!number < 6 && !number > 0) return;
+								number = number - 1;
+								var url = results[number].link;
+								yt.getInfo(url, (err, info) => {
+									if (err) return m.channel.send('Error while adding song to autoplaylist: ' + err);
+									let obj = queue[msg.guild.id].autoplaylist.find(o => o.url.toLowerCase() == url.toLowerCase());
+									if (obj) {
+										msg.channel.send('This song is already on the Autoplaylist.');
+										return;
+									}
+									var format = chooseFormat(info.formats);
+									if (!format) {
+										msg.channel.send('Could not download. Try again later.');
+										console.log('Error downloading. Could not get format.');
+										return;
+									}
+									var requester = m.author.username + '#' + m.author.discriminator;
+									queue[msg.guild.id].autoplaylist.push({
+										url: url,
+										title: info.title,
+										requester: requester,
+										video_id: info.video_id,
+										avatarURL: msg.author.displayAvatarURL(),
+										length: info.length_seconds,
+										author: info.author.name,
+										format: format
+									});
+									fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
+										if (err) {
+											console.log('Error ' + err + ' saving autoplaylist to file in guild: ' + m.guild.name);
+											m.channel.send('Error ' + err + ' saving autoplaylist to file.');
+											return;
+										} else {
+											clearTimeout(timeout);
+											collector.stop();
+											canPlay[msg.channel.id].canPlay = true;
+											delete canPlay[msg.channel.id].id;
+											var minutes = Math.floor(info.length_seconds / 60);
+											var seconds = info.length_seconds - minutes * 60;
+											var finalTime = minutes + ':' + seconds;
+											m.channel.send({
+												'embed': {
+													'description': '**Added song to autoplaylist: [' + info.title + '](' + url + ')**',
+													'color': 123433,
+													'thumbnail': {
+														'url': results[number].thumbnails.high.url
+													},
+													'author': {
+														'name': m.author.username,
+														'icon_url': m.author.displayAvatarURL()
+													},
+													'fields': [{
+														'name': 'Channel',
+														'value': results[number].channelTitle,
+														'inline': true
+													},
+													{
+														'name': 'Duration',
+														'value': finalTime,
+														'inline': true
+													},
+													{
+														'name': 'Songs in autoplaylist',
+														'value': queue[m.guild.id].autoplaylist.length,
+														'inline': true
+													}
+													]
+												}
+											});
+										}
+									});
+								});
+							} else {
+								if (!m.content.startsWith(tokens.prefix + 'cancel')) return;
+								clearTimeout(timeout);
+								collector.stop();
+								m.channel.send('Canceled playing song.');
+								canPlay[msg.channel.id].canPlay = true;
+								delete canPlay[msg.channel.id].id;
+							}
+						});
 					});
-				});
-			}
+				}
+			}, (reason) => {
+				msg.channel.send("Error getting autoplaylist.");
+				console.log("Error getting autoplaylist in guild " + msg.guild.id);
+			});
 		}
 	},
 	play: {
@@ -743,7 +738,7 @@ exports.commands = {
 			if (!canPlay.hasOwnProperty(msg.channel.id)) canPlay[msg.channel.id] = {}, canPlay[msg.channel.id].canPlay = true, canPlay[msg.channel.id].id = 0, canPlay[msg.channel.id].reason = 'undefined';
 			if (canPlay[msg.channel.id].canPlay == false && !msg.author.id == canPlay[msg.channel.id].id) return;
 			if (canPlay[msg.channel.id].canPlay == false) return;
-			if (!msg.guild.voiceConnection) return join(msg).then(() => {exports.commands.play.command(msg, tokens, commandfiles, client)}, () => {msg.channel.send("I couldn't join your voice channel..")});
+			if (!msg.guild.voiceConnection) return join(msg).then(() => { exports.commands.play.command(msg, tokens, commandfiles, client) }, () => { msg.channel.send("I couldn't join your voice channel..") });
 			if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
 			let url = msg.content.split(' ')[1];
 			if (urlchk.isWebUri(url)) {
@@ -946,7 +941,7 @@ exports.commands = {
 		description: 'Joins a voice channel.',
 		aliases: ['j'],
 		command: (msg) => {
-			join(msg).catch((reason) => {msg.channel.send("I couldn't join your voice channel..");});
+			join(msg).catch((reason) => { msg.channel.send("I couldn't join your voice channel.."); });
 		}
 	},
 	'playautoplaylist': {
@@ -974,6 +969,9 @@ exports.commands = {
 			}
 			canPlayAutoplaylist[msg.guild.id].canPlay = false;
 			queue[msg.guild.id].songs = [];
+			if (queue[msg.guild.id].playing) {
+				voiceChannel.connection.dispatcher.end();
+			}
 			queue[msg.guild.id].playing = false;
 			voiceChannel.leave();
 			if (queue[msg.guild.id].downloading == true) {
@@ -1015,7 +1013,7 @@ exports.commands = {
 			if (!queue.hasOwnProperty(msg.guild.id)) queue[msg.guild.id] = {}, queue[msg.guild.id].playing = false, queue[msg.guild.id].loop = false, queue[msg.guild.id].songs = [], queue[msg.guild.id].autoplaylist = [];
 			if (queue[msg.guild.id].songs.length == 0) return msg.channel.send('Please add songs to the queue before shuffling.');
 			var originalQueue = queue[msg.guild.id].songs;
-        
+
 			function shuffle(a) {
 				var j, x, i;
 				for (i = a.length - 1; i > 0; i--) {
