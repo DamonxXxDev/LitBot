@@ -126,7 +126,7 @@ exports.functions = {
 							fs.readFile('./.data/cmds_' + msg.guild.id + '.json', (err, data) => {
 								if (err) {
 									if (err.code == 'ENOENT') {
-										fs.writeFile('./.data/cmds' + msg.guild.id + '.json', "[]", (err) => {
+										fs.writeFile('./.data/cmds_' + msg.guild.id + '.json', "[]", (err) => {
 											if (err) {
 												reject(Error("Error saving admin role."));
 											} else {
@@ -149,7 +149,6 @@ exports.functions = {
 		})
 	},
 	checkCmd: (msg) => {
-		//this probably causes the lag
 		exports.functions.getCustomCmds(msg)
 			.then(function (result, err) {
 				if (!err) {
