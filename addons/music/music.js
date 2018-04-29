@@ -155,7 +155,7 @@ function join(msg) {
 	return new Promise((resolve, reject) => {
 		const voiceChannel = msg.member.voiceChannel;
 		if (!voiceChannel || voiceChannel.type !== 'voice') return reject(Error("Invalid channel"));
-		voiceChannel.join().then(connection => resolve(connection), reason => reject(err));
+		voiceChannel.join().then(connection => resolve(connection), reason => reject(reason));
 	});
 }
 function chooseFormat(formats) {
@@ -941,7 +941,9 @@ exports.commands = {
 		description: 'Joins a voice channel.',
 		aliases: ['j'],
 		command: (msg) => {
-			join(msg).catch((reason) => { msg.channel.send("I couldn't join your voice channel.."); });
+			join(msg).catch((reason) => { 
+			msg.channel.send("I couldn't join your voice channel.."); 
+			});
 		}
 	},
 	'playautoplaylist': {
