@@ -53,7 +53,6 @@ function checkFiles(dir){
 		}else if (addons[a] === 'index.js' || !addons[a].endsWith('.js')) {
 			continue;
 		}else{
-			console.log(dir + '/' + addons[a]);
 			getCmdsFromFile(dir + '/' + addons[a]);
 		}
 	}

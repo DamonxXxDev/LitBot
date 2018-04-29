@@ -46,7 +46,6 @@ exports.commands.fortnitestats = {
 			if (error) console.log(error);
 			try {
 				var data = JSON.parse(body);
-				console.log(data);
 			}
 			catch(error) {
 				msg.channel.send('Error getting data. Try again later.');
@@ -79,21 +78,21 @@ exports.commands.fortnitestats = {
 						data.lifeTimeStats[i].value = data.lifeTimeStats[i].value.replace(/\D/g,'');
 						placenumber = placenumber + parseInt(data.lifeTimeStats[i].value);
 						obj.push({
-							"name": data.lifeTimeStats[i].key,
+							"name": String(data.lifeTimeStats[i].key),
 							"value": String(placenumber),
 							"inline" : true
 						});
 						continue;
 					}
 					obj.push({
-						"name": data.lifeTimeStats[i].key,
-						"value": data.lifeTimeStats[i].value,
+						"name": String(data.lifeTimeStats[i].key),
+						"value": String(data.lifeTimeStats[i].value),
 						"inline" : true
 					});
 				}
 				obj.push({
 					"name": "Win%",
-					"value": winPercent,
+					"value": String(winPercent),
 					"inline" : true
 				});
 				var msgObj = {
@@ -102,7 +101,7 @@ exports.commands.fortnitestats = {
 						'color': 16073282,
 						'author': {
 							'name': msg.author.username,
-							'icon_url': msg.author.avatarURL
+							'icon_url': msg.author.avatarURL()
 						},
 						'footer': {
 							'text': 'Source: https://fortnitetracker.com'
@@ -110,7 +109,6 @@ exports.commands.fortnitestats = {
 						'fields': obj
 					}
 				};
-				console.log(msgObj);
 				msg.channel.send(msgObj);
 			} else if (args[3] === 'solo'){
 				var stats = Object.values(data.stats.p2);
@@ -139,7 +137,7 @@ exports.commands.fortnitestats = {
 				}
 				obj.push({
 					"name": "Win%",
-					"value": winPercent,
+					"value": String(winPercent),
 					"inline" : true
 				});
 				var msgObj = {
@@ -148,7 +146,7 @@ exports.commands.fortnitestats = {
 						'color': 16073282,
 						'author': {
 							'name': msg.author.username,
-							'icon_url': msg.author.avatarURL
+							'icon_url': msg.author.avatarURL()
 						},
 						'footer': {
 							'text': 'Source: https://fortnitetracker.com'
@@ -194,7 +192,7 @@ exports.commands.fortnitestats = {
 						'color': 16073282,
 						'author': {
 							'name': msg.author.username,
-							'icon_url': msg.author.avatarURL
+							'icon_url': msg.author.avatarURL()
 						},
 						'footer': {
 							'text': 'Source: https://fortnitetracker.com'
@@ -202,7 +200,6 @@ exports.commands.fortnitestats = {
 						'fields': obj
 					}
 				};
-				console.log(msgObj);
 				msg.channel.send(msgObj);
 			} else if (args[3] === 'squad'){
 				var stats = Object.values(data.stats.p9);
@@ -240,7 +237,7 @@ exports.commands.fortnitestats = {
 						'color': 16073282,
 						'author': {
 							'name': msg.author.username,
-							'icon_url': msg.author.avatarURL
+							'icon_url': msg.author.avatarURL()
 						},
 						'footer': {
 							'text': 'Source: https://fortnitetracker.com'
@@ -248,7 +245,6 @@ exports.commands.fortnitestats = {
 						'fields': obj
 					}
 				};
-				console.log(msgObj);
 				msg.channel.send(msgObj);
 			} else if (args[3] === undefined) {
 				msg.channel.send('Argument 4: gamemode missing.');
