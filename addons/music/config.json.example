@@ -1,0 +1,6 @@
+// remove all comments starting with //
+{
+    "yt_api_key" : "", // youtube api key, get from https://developers.google.com/youtube/registering_an_application
+    "passes" : , // 1-5, higher number means better quality but uses more bandwidth
+    "cache_songs" : false // set to true to save downloaded songs
+}

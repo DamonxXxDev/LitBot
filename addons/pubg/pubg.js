@@ -1,6 +1,6 @@
 var request = require('request');
 const fs = require('fs');
-const tokens = require('../.data/tokens.json');
+const tokens = require(global.unixdirname + '/.data/tokens.json');
 var ids = {};
 var seasons = {};
 var seasonnamearr = [];

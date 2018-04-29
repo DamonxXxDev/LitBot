@@ -3,6 +3,7 @@ let weatherdata = {};
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
+var config = require(__dirname.replace(/\\/g, "/") + "/config.json");
 exports.commands = new Object();
 exports.commands.weather = {
 	usage: '<city>',
@@ -24,7 +25,7 @@ exports.commands.weather = {
 		}
 		var diff = today.getTime() - weatherdata[arg0].time;
 		if (diff > 600000) {
-			request('http://api.openweathermap.org/data/2.5/weather?q=' + args[0] + '&type=like&lang=en&cnt=1&APPID=' + tokens.weatherkey, function(error, response, body) {
+			request('http://api.openweathermap.org/data/2.5/weather?q=' + args[0] + '&type=like&lang=en&cnt=1&APPID=' + config.weatherkey, function(error, response, body) {
 				if(error) {
 					console.log('Error: ' + error);
 					msg.channel.send('Error getting weather info.');

@@ -5,7 +5,7 @@ exports.commands.help = {
 	description: 'Shows this help text.',
 	command: (msg, tokens) => {
 		if(tosend == undefined) {
-			var commandfiles = require('../addons.js').commands;
+			var commandfiles = require(global.unixdirname + '/addons.js').commands;
 			var keys = Object.keys(commandfiles);
 			var names = Object.getOwnPropertyNames(commandfiles);
 			names.splice(0,5);

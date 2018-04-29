@@ -1,0 +1,4 @@
+//remove comments starting with //
+{
+    "weatherkey" : "" // get key from https://openweathermap.org/api
+}

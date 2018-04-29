@@ -2,7 +2,7 @@ exports.commands = new Object();
 var customcmds = {};
 //test if works
 const fs = require('fs');
-var addons = require('../addons.js');
+var addons = require(global.unixdirname + '/addons.js');
 exports.commands = {
 	addcommand: {
 		usage: '<"command"> <"response">',

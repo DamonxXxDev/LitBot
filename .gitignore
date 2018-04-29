@@ -56,3 +56,5 @@ ffmpeg.exe
 info.txt
 start.sh
 todo.txt
+config.json
+.data

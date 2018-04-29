@@ -1,5 +1,5 @@
 const fs = require('fs');
-var addons = require('../addons.js');
+var addons = require(global.unixdirname + '/addons.js');
 let roleids = null;
 var client = null;
 exports.functions = new Object();

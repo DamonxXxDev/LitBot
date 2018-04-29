@@ -8,13 +8,14 @@ let queue = {};
 let canPlay = {};
 let canPlayAutoplaylist = {};
 var search = require('youtube-search');
-const tokens = require('../.data/tokens.json');
+const tokens = require(global.unixdirname + '/.data/tokens.json');
+var config = require(__dirname.replace(/\\/g, "/") + "/config.json");
 var opts = {
 	maxResults: 5,
-	key: tokens.yt_api_key
+	key: config.yt_api_key
 };
 const fs = require('fs');
-var addons = require('../addons.js');
+var addons = require(global.unixdirname + '/addons.js');
 function isNumeric(n) {
 	return !isNaN(parseFloat(n)) && isFinite(n);
 }
@@ -42,11 +43,11 @@ function play(song, msg) {
 		playAutoPlaylist(msg);
 		return;
 	}
-	var playOptions = { passes: tokens.passes };
+	var playOptions = { passes: config.passes };
 	if (song.format.container == 'webm' && song.format.audioEncoding == 'opus') {
 		playOptions.type = 'webm/opus';
 	}
-	if (tokens.cache_songs == true) {
+	if (config.cache_songs == true) {
 		fs.stat('./.data/downloadedSongs/' + song.video_id + '.' + song.format.container, (err) => {
 			if (err == null) {
 				queue[msg.guild.id].downloading = false;
@@ -144,7 +145,7 @@ function play(song, msg) {
 				//collector.stop();
 				queue[msg.guild.id].playing = false;
 				//TODO fix this needing the bot controller role
-				exports.commands.disconnect(msg, tokens);
+				exports.commands.disconnect(msg);
 			});
 		});
 	}
@@ -839,7 +840,7 @@ exports.commands = {
 							return;
 						}
 						if (!m.author.id == msg.author.id) return;
-						if (m.content.startsWith(tokens.prefix + 'play ')) {
+						if (m.content.startsWith(tokens.prefix + 'play ') || m.content.startsWith(tokens.prefix + 'p ')) {
 							var parts = m.content.split(' ');
 							parts.shift();
 							var number = parts.join(' ');
@@ -852,7 +853,6 @@ exports.commands = {
 								if (err) {
 									msg.channel.send('Error playing song: `' + err + '`');
 									collector.stop();
-									clearTimeout(timeout);
 									return;
 								}
 								var requester = msg.author.username + '#' + msg.author.discriminator;
@@ -958,7 +958,7 @@ exports.commands = {
 		usage: '',
 		description: 'Leaves the current voice channel.',
 		aliases: ['leave'],
-		command: (msg, tokens) => {
+		command: (msg) => {
 			if (addons.functions.hasRole(msg, tokens) == false) return;
 			const voiceChannel = msg.member.voiceChannel;
 			if (!voiceChannel || voiceChannel.type !== 'voice') return msg.reply('I couldn\'t disconnect from your voice channel...');
