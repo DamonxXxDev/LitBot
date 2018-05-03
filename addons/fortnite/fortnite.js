@@ -37,7 +37,7 @@ exports.commands.fortnitestats = {
 			return;
 		}
 		var options = {
-			url: 'https://api.fortnitetracker.com/v1/profile/' + args[1] + '/' + args[2],
+			url: 'https://api.fortnitetracker.com/v1/profile/' + encodeURI(args[1]) + '/' + encodeURI(args[2]),
 			headers: {
 				'TRN-Api-Key': config.fortnite_api_key
 			}

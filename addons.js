@@ -6,15 +6,14 @@ exports.functions = function() {
 	return 'Please specify the function as property.';
 };
 function getCmdsFromFile(path){
-	try{
-		//'./addons/' + addons[a]
+	//TODO fix this try/catch
 	var cmdFile = require(path);
 	if (cmdFile.hasOwnProperty('commands')) {
 		var cmdsInFileArr = Object.getOwnPropertyNames(cmdFile.commands);
 		for (i = 0, len = cmdsInFileArr.length; i < len; i++) {
 			if (exports.commands.hasOwnProperty(cmdFile.commands[cmdsInFileArr[i]])) {
 				//doesnt work
-				console.log('Duplicate command ' + cmdFile.commands[cmdsInFileArr[i]] + ' found.');
+				console.error('Duplicate command ' + cmdFile.commands[cmdsInFileArr[i]] + ' found.');
 			} else {
 				exports.commands[cmdsInFileArr[i]] = cmdFile.commands[cmdsInFileArr[i]];
 			}
@@ -24,16 +23,11 @@ function getCmdsFromFile(path){
 		var fileFuncs = Object.getOwnPropertyNames(cmdFile.functions);
 		for (var i = 0, len = fileFuncs.length; i < len; i++) {
 			if (exports.functions.hasOwnProperty(cmdFile.functions[fileFuncs[i]])) {
-				console.log('Duplicate function ' + cmdFile.functions[fileFuncs[i]] + ' found.');
+				console.error('Duplicate function ' + cmdFile.functions[fileFuncs[i]] + ' found.');
 			} else {
 				exports.functions[fileFuncs[i]] = cmdFile.functions[fileFuncs[i]];
 			}
 		}
-	}
-	}
-	catch(err){
-		console.error("Error getting addons from files. You probably have a invalid addon.");
-		throw err;
 	}
 }
 checkFiles(__dirname.replace(/\\/g, "/") + '/addons');
@@ -43,7 +37,7 @@ function checkFiles(dir){
 		addons = fs.readdirSync(dir);
 	}
 	catch(err){
-		console.log("Error reading addons directory: ");
+		console.error("Error reading addons directory: ");
 		throw err;
 	}
 	for (var a = 0, le = addons.length; a < le; a++) {

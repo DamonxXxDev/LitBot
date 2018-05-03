@@ -15,7 +15,7 @@ client.on('ready', () => {
 	addons.functions.getRoleIds();
 	addons.functions.initBot(client);
 });
-client.on('message', async msg => {
+client.on('message', msg => {
 	if (msg.author.id === client.user.id) return;
 	if (msg.channel.type == 'dm' || msg.channel.type == 'group') {
 		msg.channel.send('DMs or groups are not yet supported.');
