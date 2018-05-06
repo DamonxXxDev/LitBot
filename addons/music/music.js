@@ -2,6 +2,7 @@
 //TODO fix format saved in autoplaylist file saving all data
 //TODO auto disconnect when no one is in voice channel
 //TODO youtube autoplay
+//TODO soundcloud
 var yt = require('ytdl-core');
 var urlchk = require('valid-url');
 let queue = {};
@@ -160,6 +161,16 @@ function join(msg) {
 		const voiceChannel = msg.member.voiceChannel;
 		if (!voiceChannel || voiceChannel.type !== 'voice') return reject(Error("Invalid channel"));
 		voiceChannel.join().then(connection => resolve(connection), reason => reject(reason));
+		var checkConnected = setInterval(function(){
+			console.log(voiceChannel.members.array());
+			if(voiceChannel.members.array().length == 1){
+				msg.channel.send("No one in voice channel. Disconnecting.");
+				voiceChannel.leave();
+			}
+		}, 10000)
+		voiceChannel.connection.on("disconnect", () => {
+			clearInterval(checkConnected);
+		});
 	});
 }
 function chooseFormat(formats) {
@@ -213,7 +224,8 @@ function playAutoPlaylist(msg) {
 				length: info.length_seconds,
 				author: info.author.name,
 				type: 'Autoplaylist',
-				format: format
+				format: format,
+				site: "youtube"
 			});
 			play(queue[msg.guild.id].songs.shift(), msg);
 			queue[msg.guild.id].playing = true;
@@ -544,7 +556,8 @@ exports.commands = {
 							video_id: info.video_id,
 							avatarURL: msg.author.displayAvatarURL(),
 							length: info.length_seconds,
-							author: info.author.name
+							author: info.author.name,
+							site: "youtube"
 						});
 						//save autoplaylist array to file
 						fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
@@ -644,7 +657,8 @@ exports.commands = {
 										avatarURL: msg.author.displayAvatarURL(),
 										length: info.length_seconds,
 										author: info.author.name,
-										format: format
+										format: format,
+										site: "youtube"
 									});
 									fs.writeFile('./.data/autoPL_' + msg.guild.id + '.json', JSON.stringify(queue[msg.guild.id].autoplaylist, null, '\t'), (err) => {
 										if (err) {
@@ -742,7 +756,8 @@ exports.commands = {
 						length: info.length_seconds,
 						author: info.author.name,
 						type: 'Queue',
-						format: format
+						format: format,
+						site: "youtube"
 					});
 					if (queue[msg.guild.id].playing == true) {
 						var minutes = Math.floor(info.length_seconds / 60);
@@ -851,7 +866,8 @@ exports.commands = {
 									length: info.length_seconds,
 									author: info.author.name,
 									type: 'Queue',
-									format: format
+									format: format,
+									site: "youtube"
 								});
 								if (queue[msg.guild.id].playing == true) {
 									var minutes = Math.floor(info.length_seconds / 60);

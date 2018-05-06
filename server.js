@@ -1,11 +1,12 @@
 const { Client } = require('discord.js');
-var path = require("path");
 global.unixdirname = __dirname.replace(/\\/g, "/");
 //TODO addon settings from tokens.json to invidiual files
 const tokens = require('./.data/tokens.json');
 const client = new Client();
 var addons = require('./addons.js');
 var commandfiles = addons.commands;
+exports.client = client;
+exports.tokens = tokens;
 process.stdin.resume();
 process.on('SIGINT', () => {
 	console.log('Exiting..');
